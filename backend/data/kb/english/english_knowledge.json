@@ -1,0 +1,100 @@
+[
+    {
+        "id": "eng_grammar_001",
+        "topic": "Tenses - Present Simple",
+        "category": "grammar",
+        "content": "Present Simple Tense is used for habits, routines, and general truths. Structure: Subject + base verb (add s/es for he/she/it). Examples: 'I go to school every day.' 'She plays tennis on weekends.' 'The sun rises in the east.' Common mistakes: Using 'is' with main verb — WRONG: 'She is go to school.' CORRECT: 'She goes to school.'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_grammar_002",
+        "topic": "Tenses - Present Continuous",
+        "category": "grammar",
+        "content": "Present Continuous Tense is used for actions happening right now or temporary situations. Structure: Subject + am/is/are + verb-ing. Examples: 'I am studying English right now.' 'They are playing football.' 'She is reading a book this week.' Common mistakes: Missing 'am/is/are' — WRONG: 'I studying now.' CORRECT: 'I am studying now.' Also, stative verbs like know, believe, love usually don't use continuous form — WRONG: 'I am knowing the answer.' CORRECT: 'I know the answer.'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_grammar_003",
+        "topic": "Tenses - Past Simple",
+        "category": "grammar",
+        "content": "Past Simple Tense is used for completed actions in the past. Structure: Subject + past form of verb (V2). Examples: 'I went to the market yesterday.' 'She studied for two hours.' 'They played cricket last Sunday.' For negatives use 'did not' + base verb: 'I did not go.' NOT 'I did not went.' Common irregular verbs: go-went, eat-ate, buy-bought, see-saw, take-took, give-gave, come-came, make-made.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_grammar_004",
+        "topic": "Tenses - Present Perfect",
+        "category": "grammar",
+        "content": "Present Perfect Tense connects past to present. Structure: Subject + has/have + past participle (V3). Examples: 'I have finished my homework.' 'She has visited Paris twice.' 'They have lived here for ten years.' Use 'since' for specific time (since 2020) and 'for' for duration (for 5 years). Common mistake: Using past simple instead — WRONG context: 'I lived here for 10 years' (if still living there). CORRECT: 'I have lived here for 10 years.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_grammar_005",
+        "topic": "Articles - A, An, The",
+        "category": "grammar",
+        "content": "Articles in English: 'a' is used before consonant sounds (a book, a university — 'yu' sound). 'an' is used before vowel sounds (an apple, an hour — silent 'h'). 'the' is used when referring to something specific or already mentioned. Examples: 'I saw a dog. The dog was brown.' No article with plural general nouns: 'Dogs are loyal.' Common mistakes: 'I am student' → CORRECT: 'I am a student.' 'I went to the school' (when talking generally) → CORRECT: 'I went to school.'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_grammar_006",
+        "topic": "Prepositions - In, On, At",
+        "category": "grammar",
+        "content": "Prepositions of time: 'at' for specific time (at 5 PM, at noon, at night). 'on' for days and dates (on Monday, on 15th March). 'in' for months, years, and long periods (in January, in 2024, in the morning). Prepositions of place: 'at' for specific point (at the bus stop). 'on' for surface (on the table). 'in' for enclosed space (in the room). Common mistakes: 'I will come at Monday' → CORRECT: 'I will come on Monday.' 'She lives at India' → CORRECT: 'She lives in India.'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_grammar_007",
+        "topic": "Common English Mistakes by Hindi Speakers",
+        "category": "grammar",
+        "content": "Common mistakes Hindi speakers make in English: 1) Adding extra 'is': 'My name is Raj is' → CORRECT: 'My name is Raj.' 2) Wrong word order: 'I yesterday went market' → CORRECT: 'I went to the market yesterday.' 3) Dropping articles: 'Give me book' → CORRECT: 'Give me a book.' 4) Using 'itself' incorrectly: 'I myself did it itself' → CORRECT: 'I did it myself.' 5) Confusing 'will' with 'would': 'I would go tomorrow' → CORRECT: 'I will go tomorrow.' 6) Using present continuous for habits: 'I am going to school daily' → CORRECT: 'I go to school daily.'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_vocab_001",
+        "topic": "Vocabulary - Daily Routine Words",
+        "category": "vocabulary",
+        "content": "Essential daily routine vocabulary: wake up (uthna), get up (bed se uthna), brush teeth (daant saaf karna), take a shower (nahana), get dressed (kapde pehnna), have breakfast (nashta karna), commute (office/school jaana), have lunch (dopahar ka khana), take a break (break lena), have dinner (raat ka khana), go to bed (sona). Example sentences: 'I wake up at 6 AM.' 'She takes a shower before breakfast.' 'They commute by bus.'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_vocab_002",
+        "topic": "Vocabulary - Formal vs Informal",
+        "category": "vocabulary",
+        "content": "Formal vs Informal English: Informal → Formal: 'Hi' → 'Good morning/afternoon', 'Thanks' → 'Thank you very much', 'Can you help?' → 'Could you please assist me?', 'I want' → 'I would like', 'Sorry' → 'I apologize', 'ASAP' → 'at your earliest convenience', 'OK/Sure' → 'Certainly', 'I think' → 'In my opinion', 'a lot of' → 'numerous/significant'. Use formal in: emails to boss, job interviews, business meetings. Use informal in: chatting with friends, casual texts, social media.",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_vocab_003",
+        "topic": "Vocabulary - Phrasal Verbs",
+        "category": "vocabulary",
+        "content": "Common Phrasal Verbs: 'look up' = search for information ('Look up this word in the dictionary.'), 'give up' = stop trying ('Don't give up, keep trying!'), 'break down' = stop working ('My car broke down.'), 'turn on/off' = start/stop a device ('Turn off the light.'), 'pick up' = collect or learn ('I picked up some groceries.' or 'She picked up Spanish quickly.'), 'put off' = postpone ('Don't put off your homework.'), 'run out of' = have no more ('We ran out of milk.'), 'come up with' = think of an idea ('She came up with a great plan.')",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_conversation_001",
+        "topic": "Conversation - Self Introduction",
+        "category": "conversation",
+        "content": "How to introduce yourself in English: Template: 'Hello, my name is [name]. I am from [city/country]. I am a [profession/student]. I enjoy [hobby]. I have been learning English for [duration].' Example: 'Hello, my name is Rahul. I am from Mumbai, India. I am a software developer. I enjoy reading books and playing cricket. I have been learning English for two years.' Tips: Speak slowly and clearly. Make eye contact. Smile. Use simple sentences. Don't memorize — practice naturally.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_conversation_002",
+        "topic": "Conversation - Job Interview",
+        "category": "conversation",
+        "content": "Common job interview questions and answers: 1) 'Tell me about yourself' → Talk about education, experience, skills (2-3 minutes max). 2) 'What are your strengths?' → Pick 2-3 strengths with examples: 'I am a quick learner. In my previous job, I learned a new tool in just two weeks.' 3) 'What are your weaknesses?' → Be honest but show improvement: 'I used to struggle with time management, but I now use a planner and prioritize tasks.' 4) 'Why should we hire you?' → Match your skills to the job requirements. 5) 'Where do you see yourself in 5 years?' → Show ambition but be realistic.",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_conversation_003",
+        "topic": "Conversation - Polite Requests",
+        "category": "conversation",
+        "content": "Making polite requests in English: Direct (less polite) → Indirect (more polite): 'Give me water' → 'Could you please give me some water?' 'Tell me the time' → 'Could you tell me what time it is?' 'Move' → 'Excuse me, would you mind moving a little?' Polite phrases: 'Would you mind...?', 'Could you please...?', 'I was wondering if you could...', 'Would it be possible to...?', 'I would appreciate it if...'. Always add 'please' and 'thank you'. In India, we often say 'kindly do the needful' — in international English, say 'Could you please help with this?'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_writing_001",
+        "topic": "Email Writing - Professional",
+        "category": "writing",
+        "content": "How to write professional emails: Structure: 1) Subject line — clear and specific ('Meeting Request for Project Update'). 2) Greeting — 'Dear Mr./Ms. [Name],' or 'Hi [Name],' for semi-formal. 3) Opening — State purpose: 'I am writing to inquire about...' 4) Body — Keep paragraphs short, one idea per paragraph. 5) Closing — 'Please let me know if you need any further information.' 6) Sign-off — 'Best regards,' 'Kind regards,' 'Sincerely,'. Avoid: ALL CAPS (looks like shouting), too many exclamation marks, slang, emoji in formal emails.",
+        "difficulty": "intermediate"
+    }
+]

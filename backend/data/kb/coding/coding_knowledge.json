@@ -1,0 +1,226 @@
+[
+    {
+        "id": "dsa_array_001",
+        "topic": "Arrays - Two Sum",
+        "category": "arrays",
+        "difficulty": "easy",
+        "question": "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target. You may assume that each input would have exactly one solution, and you may not use the same element twice.",
+        "hints": [
+            "Brute force: Check all pairs using two loops — O(n^2)",
+            "Optimal: Use a hash map to store numbers you have seen",
+            "For each number, check if (target - current number) exists in the hash map"
+        ],
+        "solution": "def two_sum(nums, target):\n    seen = {}  # hash map: number -> index\n    for i, num in enumerate(nums):\n        complement = target - num\n        if complement in seen:\n            return [seen[complement], i]\n        seen[num] = i\n    return []",
+        "explanation": "We use a hash map (dictionary) to store each number and its index as we iterate. For each number, we calculate its complement (target - current number). If the complement exists in our hash map, we found our pair. Time: O(n), Space: O(n).",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)"
+    },
+    {
+        "id": "dsa_array_002",
+        "topic": "Arrays - Maximum Subarray (Kadane's Algorithm)",
+        "category": "arrays",
+        "difficulty": "medium",
+        "question": "Given an integer array nums, find the contiguous subarray which has the largest sum and return its sum.",
+        "hints": [
+            "Think about when you should start a new subarray vs extend the current one",
+            "If the current running sum becomes negative, it's better to start fresh",
+            "Kadane's Algorithm: max_ending_here = max(num, max_ending_here + num)"
+        ],
+        "solution": "def max_subarray(nums):\n    max_sum = nums[0]\n    current_sum = nums[0]\n    for i in range(1, len(nums)):\n        current_sum = max(nums[i], current_sum + nums[i])\n        max_sum = max(max_sum, current_sum)\n    return max_sum",
+        "explanation": "Kadane's Algorithm works by maintaining a running sum. At each element, we decide: should we add this element to the existing subarray, or start a new subarray from this element? If current_sum + nums[i] < nums[i], it means the previous sum was dragging us down, so we start fresh. We track the maximum sum seen so far.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_array_003",
+        "topic": "Arrays - Best Time to Buy and Sell Stock",
+        "category": "arrays",
+        "difficulty": "easy",
+        "question": "You are given an array prices where prices[i] is the price of a stock on the ith day. You want to maximize your profit by choosing a single day to buy and a different day in the future to sell. Return the maximum profit, or 0 if no profit is possible.",
+        "hints": [
+            "You need to buy before you sell (left to right)",
+            "Track the minimum price seen so far",
+            "At each day, calculate profit if you sold today (current price - min price so far)"
+        ],
+        "solution": "def max_profit(prices):\n    min_price = float('inf')\n    max_profit = 0\n    for price in prices:\n        min_price = min(min_price, price)\n        profit = price - min_price\n        max_profit = max(max_profit, profit)\n    return max_profit",
+        "explanation": "We iterate through prices once, keeping track of the minimum price seen so far. At each price, we calculate what our profit would be if we sold at this price (having bought at the minimum). We update our maximum profit accordingly. This gives us O(n) time with O(1) space.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_string_001",
+        "topic": "Strings - Valid Palindrome",
+        "category": "strings",
+        "difficulty": "easy",
+        "question": "Given a string s, determine if it is a palindrome, considering only alphanumeric characters and ignoring cases. A palindrome reads the same backward as forward.",
+        "hints": [
+            "First, clean the string: remove non-alphanumeric chars and convert to lowercase",
+            "Two pointer approach: one from start, one from end, compare characters",
+            "Alternative: compare cleaned string with its reverse"
+        ],
+        "solution": "def is_palindrome(s):\n    cleaned = ''.join(c.lower() for c in s if c.isalnum())\n    left, right = 0, len(cleaned) - 1\n    while left < right:\n        if cleaned[left] != cleaned[right]:\n            return False\n        left += 1\n        right -= 1\n    return True",
+        "explanation": "First we clean the string by keeping only alphanumeric characters and converting to lowercase. Then we use two pointers — one from the start and one from the end — moving toward the center. If at any point the characters don't match, it's not a palindrome.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)"
+    },
+    {
+        "id": "dsa_string_002",
+        "topic": "Strings - Valid Anagram",
+        "category": "strings",
+        "difficulty": "easy",
+        "question": "Given two strings s and t, return true if t is an anagram of s, and false otherwise. An anagram uses all the original letters exactly once.",
+        "hints": [
+            "If lengths are different, can't be anagrams",
+            "Count frequency of each character in both strings",
+            "Use a hash map or Counter from collections"
+        ],
+        "solution": "def is_anagram(s, t):\n    if len(s) != len(t):\n        return False\n    count = {}\n    for c in s:\n        count[c] = count.get(c, 0) + 1\n    for c in t:\n        count[c] = count.get(c, 0) - 1\n        if count[c] < 0:\n            return False\n    return True",
+        "explanation": "We count character frequencies. For string s, we increment counts. For string t, we decrement. If any count goes negative, t has a character that s doesn't have (or has more of it), so they're not anagrams. This is O(n) time and O(1) space (at most 26 letters).",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_linkedlist_001",
+        "topic": "Linked List - Reverse a Linked List",
+        "category": "linked_list",
+        "difficulty": "easy",
+        "question": "Given the head of a singly linked list, reverse the list and return the reversed list.",
+        "hints": [
+            "Use three pointers: prev, current, next",
+            "At each step, point current node's next to prev",
+            "Move all three pointers one step forward"
+        ],
+        "solution": "def reverse_list(head):\n    prev = None\n    current = head\n    while current:\n        next_node = current.next  # save next\n        current.next = prev       # reverse pointer\n        prev = current            # move prev forward\n        current = next_node       # move current forward\n    return prev  # prev is the new head",
+        "explanation": "We iterate through the list, reversing each pointer. We need three pointers: prev (starts at None), current (starts at head), and next_node (temporarily saves the next node before we break the link). At each step, we point current.next backward to prev, then advance all pointers. When current becomes None, prev is our new head.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_linkedlist_002",
+        "topic": "Linked List - Detect Cycle",
+        "category": "linked_list",
+        "difficulty": "easy",
+        "question": "Given head of a linked list, determine if the linked list has a cycle in it. A cycle exists if some node can be reached again by continuously following its next pointer.",
+        "hints": [
+            "Floyd's Cycle Detection Algorithm (Tortoise and Hare)",
+            "Use two pointers: slow moves 1 step, fast moves 2 steps",
+            "If they meet, there's a cycle. If fast reaches None, no cycle."
+        ],
+        "solution": "def has_cycle(head):\n    slow = head\n    fast = head\n    while fast and fast.next:\n        slow = slow.next        # 1 step\n        fast = fast.next.next   # 2 steps\n        if slow == fast:\n            return True         # they met = cycle exists\n    return False  # fast reached end = no cycle",
+        "explanation": "Floyd's Algorithm uses two pointers moving at different speeds. Think of two runners on a circular track — the faster one will eventually lap the slower one. If there's a cycle, fast and slow will meet. If there's no cycle, fast will reach the end (None). Time: O(n), Space: O(1).",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_stack_001",
+        "topic": "Stack - Valid Parentheses",
+        "category": "stack",
+        "difficulty": "easy",
+        "question": "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid. An input string is valid if: open brackets are closed by the same type, and open brackets are closed in the correct order.",
+        "hints": [
+            "Use a stack data structure",
+            "Push opening brackets onto stack",
+            "When you see a closing bracket, check if it matches the top of the stack"
+        ],
+        "solution": "def is_valid(s):\n    stack = []\n    mapping = {')': '(', '}': '{', ']': '['}\n    for char in s:\n        if char in mapping.values():  # opening bracket\n            stack.append(char)\n        elif char in mapping:  # closing bracket\n            if not stack or stack[-1] != mapping[char]:\n                return False\n            stack.pop()\n    return len(stack) == 0",
+        "explanation": "We use a stack (LIFO). When we see an opening bracket, we push it. When we see a closing bracket, we check if the top of the stack has the matching opening bracket. If not, it's invalid. At the end, the stack should be empty (all brackets matched). This naturally handles nesting because of the LIFO property.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(n)"
+    },
+    {
+        "id": "dsa_tree_001",
+        "topic": "Binary Tree - Maximum Depth",
+        "category": "trees",
+        "difficulty": "easy",
+        "question": "Given the root of a binary tree, return its maximum depth. A binary tree's maximum depth is the number of nodes along the longest path from the root node down to the farthest leaf node.",
+        "hints": [
+            "Use recursion — think about the base case",
+            "If node is None, depth is 0",
+            "Max depth = 1 + max(depth of left subtree, depth of right subtree)"
+        ],
+        "solution": "def max_depth(root):\n    if root is None:\n        return 0\n    left_depth = max_depth(root.left)\n    right_depth = max_depth(root.right)\n    return 1 + max(left_depth, right_depth)",
+        "explanation": "This is a classic recursion problem. Base case: if node is None, return 0. Recursive case: the depth of current node is 1 (for itself) plus the maximum of left and right subtree depths. The recursion naturally explores the entire tree and finds the longest path.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h) where h is height"
+    },
+    {
+        "id": "dsa_tree_002",
+        "topic": "Binary Tree - Invert Binary Tree",
+        "category": "trees",
+        "difficulty": "easy",
+        "question": "Given the root of a binary tree, invert the tree and return its root. Inverting means swapping left and right children at every level.",
+        "hints": [
+            "Recursively swap left and right children",
+            "Base case: if node is None, return None",
+            "At each node, swap its left and right children, then recurse"
+        ],
+        "solution": "def invert_tree(root):\n    if root is None:\n        return None\n    # Swap left and right\n    root.left, root.right = root.right, root.left\n    # Recurse on children\n    invert_tree(root.left)\n    invert_tree(root.right)\n    return root",
+        "explanation": "At each node, we swap the left and right children, then recursively do the same for all children. This is the famous problem that Homebrew creator Max Howell couldn't solve in a Google interview — but it's actually quite simple with recursion!",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(h) where h is height"
+    },
+    {
+        "id": "dsa_dp_001",
+        "topic": "Dynamic Programming - Climbing Stairs",
+        "category": "dynamic_programming",
+        "difficulty": "easy",
+        "question": "You are climbing a staircase. It takes n steps to reach the top. Each time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?",
+        "hints": [
+            "This is similar to the Fibonacci sequence",
+            "To reach step n, you can come from step n-1 (1 step) or step n-2 (2 steps)",
+            "ways(n) = ways(n-1) + ways(n-2)"
+        ],
+        "solution": "def climb_stairs(n):\n    if n <= 2:\n        return n\n    prev2 = 1  # ways to reach step 1\n    prev1 = 2  # ways to reach step 2\n    for i in range(3, n + 1):\n        current = prev1 + prev2\n        prev2 = prev1\n        prev1 = current\n    return prev1",
+        "explanation": "To reach step n, we can come from step n-1 (by taking 1 step) or from step n-2 (by taking 2 steps). So ways(n) = ways(n-1) + ways(n-2), which is the Fibonacci sequence! We use bottom-up DP with just two variables instead of an array to optimize space. Base cases: 1 step = 1 way, 2 steps = 2 ways.",
+        "time_complexity": "O(n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_dp_002",
+        "topic": "Dynamic Programming - Coin Change",
+        "category": "dynamic_programming",
+        "difficulty": "medium",
+        "question": "You are given coins of different denominations and a total amount. Return the fewest number of coins needed to make up that amount. If it cannot be made, return -1. You may use each coin an unlimited number of times.",
+        "hints": [
+            "Use bottom-up DP. Build solutions for amounts 0 to target",
+            "dp[i] = minimum coins needed for amount i",
+            "For each amount, try every coin and take the minimum"
+        ],
+        "solution": "def coin_change(coins, amount):\n    dp = [float('inf')] * (amount + 1)\n    dp[0] = 0  # 0 coins for amount 0\n    for i in range(1, amount + 1):\n        for coin in coins:\n            if coin <= i:\n                dp[i] = min(dp[i], dp[i - coin] + 1)\n    return dp[amount] if dp[amount] != float('inf') else -1",
+        "explanation": "We build a DP array where dp[i] = minimum coins for amount i. For each amount from 1 to target, we try every coin. If we use a coin of value c, we need dp[i-c] + 1 coins. We take the minimum across all valid coins. Base case: dp[0] = 0 (0 coins for amount 0). If dp[amount] is still infinity, it's impossible.",
+        "time_complexity": "O(amount * len(coins))",
+        "space_complexity": "O(amount)"
+    },
+    {
+        "id": "dsa_sorting_001",
+        "topic": "Sorting - Binary Search",
+        "category": "searching",
+        "difficulty": "easy",
+        "question": "Given a sorted array of integers nums and a target value, return the index of the target if found. If not, return -1. You must write an algorithm with O(log n) time complexity.",
+        "hints": [
+            "Use two pointers: left and right",
+            "Find the middle element and compare with target",
+            "If target is smaller, search left half. If larger, search right half."
+        ],
+        "solution": "def binary_search(nums, target):\n    left, right = 0, len(nums) - 1\n    while left <= right:\n        mid = (left + right) // 2\n        if nums[mid] == target:\n            return mid\n        elif nums[mid] < target:\n            left = mid + 1\n        else:\n            right = mid - 1\n    return -1",
+        "explanation": "Binary search works on sorted arrays by repeatedly halving the search space. At each step, we compare the middle element with the target. If it matches, we found it. If target is larger, we search the right half. If smaller, the left half. This gives us O(log n) time — much faster than O(n) linear search for large arrays.",
+        "time_complexity": "O(log n)",
+        "space_complexity": "O(1)"
+    },
+    {
+        "id": "dsa_hashmap_001",
+        "topic": "Hash Map - Group Anagrams",
+        "category": "hash_map",
+        "difficulty": "medium",
+        "question": "Given an array of strings, group the anagrams together. You can return the answer in any order. An anagram is a word formed by rearranging the letters of another word.",
+        "hints": [
+            "Anagrams have the same characters when sorted",
+            "Use sorted string as the key in a hash map",
+            "Group all strings with the same sorted key together"
+        ],
+        "solution": "def group_anagrams(strs):\n    groups = {}\n    for s in strs:\n        key = ''.join(sorted(s))\n        if key not in groups:\n            groups[key] = []\n        groups[key].append(s)\n    return list(groups.values())",
+        "explanation": "The key insight is that all anagrams, when sorted, produce the same string. For example, 'eat', 'tea', 'ate' all become 'aet' when sorted. We use this sorted string as a hash map key and group all anagrams together. Time: O(n * k log k) where k is the maximum string length.",
+        "time_complexity": "O(n * k log k)",
+        "space_complexity": "O(n * k)"
+    }
+]
