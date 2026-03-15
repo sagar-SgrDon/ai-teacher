@@ -9,7 +9,9 @@
 | **Vector DB** | ChromaDB (local, persistent) |
 | **Embeddings** | all-MiniLM-L6-v2 (384-dim) |
 | **Backend** | Python FastAPI |
-| **Frontend** | Vanilla HTML/CSS/JS |
+| **Frontend** | React + Vite + TypeScript |
+| **Styling** | Tailwind CSS v4 + shadcn/ui |
+| **DevOps** | Docker, GitHub Actions |
 
 ---
 
@@ -24,7 +26,7 @@ graph TB
     subgraph Backend["⚙️ Backend (FastAPI)"]
         API["/ask Endpoint"]
         ET[English Teacher]
-        CT[Coding Tutor]
+        CT[Coding Teacher]
     end
 
     subgraph Core["🧠 Core Pipeline"]
@@ -41,7 +43,7 @@ graph TB
 
     subgraph Infra["🔧 Infrastructure"]
         OLL[Ollama Server<br/>localhost:11434]
-        PHI[phi3:mini Model<br/>4.4 GB]
+        PHI[phi3:mini Model<br/>2.2 GB]
     end
 
     UI -->|HTTP POST /ask| API
@@ -187,6 +189,57 @@ LLM's Answer → Verification Prompt → Same LLM (temp=0.3) → Parse → Verdi
 
 ---
 
+### 3.4 Teachers — `backend/app/teachers/`
+
+**One-line:** Each teacher is a personality wrapper around the same RAG+LLM+Verifier pipeline.
+
+| File | Class | System Prompt | Knowledge Collection |
+|---|---|---|---|
+| `english_teacher.py` | `EnglishTeacher` | "Friendly English teacher, correct grammar, give examples" | `english_knowledge` |
+| `coding_teacher.py` | `CodingTeacher` | "Coding tutor, explain DSA, mention complexity" | `coding_knowledge` |
+
+**Design Pattern — Duck Typing:**
+```python
+# Both teachers have the SAME method signature:
+english_teacher.ask(question) → {answer, confidence, sources, ...}
+coding_teacher.ask(question)  → {answer, confidence, sources, ...}
+
+# So main.py doesn't care WHICH teacher — just call .ask()!
+teacher = pick_teacher(teacher_type)  # could be either
+result = teacher.ask(question)        # same interface!
+```
+
+---
+
+### 3.5 FastAPI Application — `backend/app/main.py`
+
+**One-line:** The entry point that receives HTTP requests, routes to the correct teacher, and returns JSON responses.
+
+**Endpoints:**
+
+| Method | Path | Purpose | Request Body |
+|---|---|---|---|
+| `GET` | `/health` | Check if server + Ollama are running | None |
+| `POST` | `/ask` | Ask a question to a teacher | `{question, teacher_type, verify}` |
+
+**Key concepts used:**
+- **Pydantic BaseModel** — validates request/response format automatically
+- **CORS Middleware** — allows frontend (different port) to talk to backend
+- **Startup Event** — loads models once at server start, not per-request
+- **HTTPException** — proper error responses with status codes
+
+**Startup flow:**
+```
+Server starts → Load RAGRetriever (embedding model + ChromaDB)
+             → Load OllamaClient (connect to Ollama)
+             → Load AnswerVerifier (uses OllamaClient)
+             → Create EnglishTeacher (gets all 3 components)
+             → Create CodingTeacher (gets all 3 components)
+             → Ready to serve requests!
+```
+
+---
+
 ## 4. Data Architecture
 
 ### Knowledge Base Stats
@@ -222,39 +275,132 @@ ai-teacher/
 ├── backend/
 │   ├── app/
 │   │   ├── config.py                 # All settings in one place
+│   │   ├── main.py                   # FastAPI app — entry point
 │   │   ├── rag/retriever.py          # Semantic search
 │   │   ├── llm/ollama_client.py      # Talk to phi3:mini
 │   │   ├── verification/verifier.py  # Double-check answers
-│   │   ├── teachers/                 # Teacher personalities (coming)
-│   │   ├── services/                 # Business logic (coming)
+│   │   ├── teachers/
+│   │   │   ├── english_teacher.py    # English teacher personality
+│   │   │   └── coding_teacher.py     # Coding teacher personality
+│   │   ├── services/                 # Business logic (future)
 │   │   └── voice/                    # Whisper + Piper TTS (future)
 │   ├── data/kb/                      # Knowledge base JSONs
 │   ├── chroma_db/                    # Vector database (auto-generated)
 │   └── scripts/                      # Setup & utility scripts
-├── frontend/                         # Chat UI (coming)
+├── frontend/                         # React + Vite + TypeScript
+│   ├── src/
+│   │   ├── main.tsx                  # React entry point
+│   │   ├── App.tsx                   # Root component
+│   │   ├── index.css                 # Global styles + Tailwind
+│   │   ├── components/               # Reusable UI blocks
+│   │   ├── pages/                    # Full pages (Chat, Topics)
+│   │   └── services/                 # API communication layer
+│   ├── package.json                  # Node dependencies
+│   └── vite.config.ts                # Vite configuration
 ├── docs/                             # This documentation
+├── docker-compose.yml                # Container orchestration
+├── .github/workflows/                # CI/CD pipelines
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## 6. Design Patterns
+## 6. Complete Tech Stack
+
+### Frontend
+
+| Technology | Version | Purpose |
+|---|---|---|
+| React | 19.x | UI framework — component-based architecture |
+| Vite | 8.x | Build tool — blazing fast HMR, instant dev server |
+| TypeScript | 5.x | Type safety — catch bugs at compile time |
+| Tailwind CSS | v4 | Utility-first CSS — rapid UI development |
+| shadcn/ui | latest | Premium UI components — buttons, dialogs, cards |
+| Framer Motion | 12.x | Smooth animations — transitions, gestures |
+| Zustand | 5.x | State management — simple, fast, 10-line setup |
+| React Router | v7 | Page routing — Topics page, Chat page |
+| Lucide React | latest | Icon library — 1500+ clean icons |
+| Axios | 1.x | HTTP client — API calls with interceptors |
+| TanStack Query | v5 | Server state — caching, retries, loading states |
+| Vitest | latest | Unit testing — fast, Vite-native |
+
+### Backend
+
+| Technology | Purpose |
+|---|---|
+| Python FastAPI | REST API framework |
+| Ollama + phi3:mini (2.2GB) | Local LLM inference |
+| ChromaDB | Vector database for RAG |
+| Sentence-Transformers | Text embeddings (all-MiniLM-L6-v2) |
+| Pydantic | Request/response validation |
+| Pytest | Backend unit testing |
+
+### DevOps & Infrastructure
+
+| Technology | Purpose | Cost |
+|---|---|---|
+| Docker + Compose | Containerization — consistent env across machines | Free |
+| GitHub Actions | CI/CD — auto test + lint on every push | Free (2000 min/month) |
+| Husky + lint-staged | Pre-commit hooks — check code before commit | Free |
+| ESLint + Prettier | Code quality + auto-formatting | Free |
+| Vercel | Frontend hosting (production) | Free tier |
+| Railway / Render | Backend hosting (production) | Free tier |
+
+### Future Additions
+
+| Technology | Purpose |
+|---|---|
+| React Three Fiber | 3D avatar rendering |
+| Ready Player Me | Avatar generator |
+| Whisper | Speech-to-text |
+| Piper TTS | Text-to-speech |
+| Rhubarb Lip Sync | Avatar lip syncing |
+
+---
+
+## 7. DevOps Pipeline
+
+```
+Developer pushes code
+        ↓
+Husky (pre-commit)
+├── ESLint check (code quality)
+├── Prettier format (code style)
+└── Type check (TypeScript)
+        ↓
+GitHub Actions (CI)
+├── Install dependencies
+├── Run linter
+├── Run frontend tests (Vitest)
+├── Run backend tests (Pytest)
+└── Build check (npm run build)
+        ↓
+Deploy (CD) — on main branch
+├── Frontend → Vercel (auto-deploy)
+└── Backend → Railway / Render
+```
+
+---
+
+## 8. Design Patterns
 
 | Pattern | Where | What it does |
 |---|---|---|
 | **RAG** | Retriever + LLM | Grounds LLM responses in factual data |
 | **Self-Verification** | Verifier | Same LLM reviews its own answer |
 | **Dependency Injection** | Verifier takes LLM client | Swap LLM without changing verifier code |
-| **Single Source of Truth** | config.py | All settings in one file |
+| **Duck Typing** | EnglishTeacher / CodingTeacher | Same `.ask()` interface, different behavior |
+| **Component Architecture** | React frontend | Reusable, isolated UI blocks |
+| **Single Source of Truth** | config.py, Zustand stores | All settings/state in one place |
 | **Pipeline** | RAG → LLM → Verify | Each stage transforms data for the next |
 | **Separation of Concerns** | rag/ llm/ verification/ | Each module does ONE job well |
 
 ---
 
-## 7. Build Progress
+## 9. Build Progress
 
-| Phase | Step | Status | File |
+| Phase | Step | Status | Tech |
 |---|---|---|---|
 | **Foundation** | 1. Ollama test | ✅ Done | `scripts/test_ollama.py` |
 | | 2. Knowledge Base | ✅ Done | `data/kb/*.json` |
@@ -262,29 +408,61 @@ ai-teacher/
 | **Core Pipeline** | 4. RAG Retriever | ✅ Done | `app/rag/retriever.py` |
 | | 5. LLM Client | ✅ Done | `app/llm/ollama_client.py` |
 | | 6. Verifier | ✅ Done | `app/verification/verifier.py` |
-| **API + UI** | 7. FastAPI | 🔲 Next | `app/main.py` |
-| | 8. Teachers | 🔲 Next | `app/teachers/*.py` |
-| | 9. Frontend | 🔲 Planned | `frontend/*` |
-| **Voice** | 10. Whisper+Piper | 🔲 Future | `app/voice/*` |
+| **API** | 7. FastAPI | ✅ Done | `app/main.py` |
+| | 8. Teachers | ✅ Done | `app/teachers/*.py` |
+| **Frontend** | 9. React+Vite setup | ✅ Done | TypeScript template |
+| | 10. Tailwind + shadcn | 🔲 Next | UI framework install |
+| | 11. Chat UI | 🔲 Planned | Components + Pages |
+| | 12. Topics UI | 🔲 Planned | Udemy-style course view |
+| **DevOps** | 13. Docker | 🔲 Planned | Containerization |
+| | 14. GitHub Actions | 🔲 Planned | CI/CD pipeline |
+| **Voice** | 15. Whisper+Piper | 🔲 Future | STT + TTS |
+| **Avatar** | 16. 3D Avatar | 🔲 Future | React Three Fiber |
 
 ---
 
-## 8. Quick Reference Commands
+## 10. Performance Benchmarks
+
+Tested on GTX 1650, 16GB RAM, phi3:mini (2.2GB):
+
+| Operation | Time | Notes |
+|---|---|---|
+| RAG Search | ~0.5s | Embedding model cached after first load |
+| LLM Generation (no verify) | ~30s | Single inference pass |
+| LLM Generation (with verify) | ~60s | Two inference passes |
+| Server startup | ~10s | Model loading + ChromaDB connection |
+| Embedding model first download | ~10s | 80MB, cached after first run |
+
+---
+
+## 11. Quick Reference Commands
 
 ```bash
-# Start Ollama
-ollama serve
+# ── Backend ──
+ollama serve                                          # Start LLM server
+source venv/Scripts/activate                          # Activate Python env
+python backend/scripts/build_vectordb.py              # Build vector DB
+uvicorn backend.app.main:app --reload --port 8000     # Start API server
 
-# Activate venv
-source venv/Scripts/activate
+# ── Frontend ──
+cd frontend && npm run dev                            # Start React dev server
+npm run build                                         # Production build → dist/
 
-# Build vector database (run after adding new knowledge)
-python backend/scripts/build_vectordb.py
-
-# Start API server (after Step 7)
-uvicorn backend.app.main:app --reload --port 8000
+# ── Test URLs ──
+# Backend Health:  http://localhost:8000/health
+# Backend Swagger: http://localhost:8000/docs
+# Frontend:        http://localhost:5173
 ```
 
 ---
 
-*This document is updated as the project progresses. Last updated: Step 6 complete.*
+## 12. Bugs Found & Fixed
+
+| Bug | Where | Fix | Lesson |
+|---|---|---|---|
+| `is_verified: true` when verify=false | `english_teacher.py`, `coding_teacher.py` | Changed default to `is_verified: False` | Default values must reflect actual state |
+| `coding_tutor` variable not found | `main.py` | Renamed to `coding_teacher` | Always rename in ALL places when refactoring |
+
+---
+
+*This document is updated as the project progresses. Last updated: Step 9 — React+Vite setup, full tech stack finalized.*
