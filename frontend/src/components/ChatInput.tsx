@@ -15,13 +15,13 @@ import { useState, useRef, useEffect } from 'react'
 import { Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useChatStore } from '@/stores/chatStore'
-import { askQuestion } from '@/services/api'
+import { askQuestionStream } from '@/services/api'
 
 export default function ChatInput() {
   const [input, setInput] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const { teacherType, verify, isLoading, addMessage, setLoading } = useChatStore()
+  const { teacherType, verify, isLoading, addMessage, setLoading, updateLastAiMessage } = useChatStore()
 
   // Component mount hote hi textarea pe focus
   useEffect(() => {
@@ -50,27 +50,40 @@ export default function ChatInput() {
     setLoading(true)
 
     try {
-      // 3. API call
-      const response = await askQuestion({
-        question,
-        teacher_type: teacherType,
-        verify,
-      })
+      // Empty AI message banao — streaming tokens isme fill honge
+      addMessage({ text: '', type: 'ai' })
 
-      // 4. AI message add karo
-      addMessage({
-        text: response.answer,
-        type: 'ai',
-        confidence: response.confidence,
-        sources: response.sources,
-        teacher: response.teacher,
-        isVerified: response.is_verified,
-      })
+      await askQuestionStream(
+        { question, teacher_type: teacherType, verify },
+        // onToken — har word aane pe last AI message mein append karo
+        (token) => updateLastAiMessage(token),
+        // onMeta — sources + teacher info aaye
+        (meta) => {
+          useChatStore.setState((state) => {
+            const msgs = [...state.messages]
+            const last = msgs.length - 1
+            if (last >= 0 && msgs[last].type === 'ai') {
+              msgs[last] = { ...msgs[last], sources: meta.sources, teacher: meta.teacher }
+            }
+            return { messages: msgs }
+          })
+        },
+        // onDone — confidence + verification complete
+        (data) => {
+          useChatStore.setState((state) => {
+            const msgs = [...state.messages]
+            const last = msgs.length - 1
+            if (last >= 0 && msgs[last].type === 'ai') {
+              msgs[last] = { ...msgs[last], confidence: data.confidence, isVerified: data.is_verified }
+            }
+            return { messages: msgs }
+          })
+        },
+        // onError
+        (error) => updateLastAiMessage(error)
+      )
     } catch (error) {
-      addMessage({
-        text: '❌ Server se connect nahi ho pa raha. Kya backend chal raha hai?',
-        type: 'ai',
-      })
+      addMessage({ text: '❌ Connection error!', type: 'ai' })
     }
 
     // 5. Loading OFF

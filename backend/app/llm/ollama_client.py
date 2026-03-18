@@ -138,6 +138,72 @@ class OllamaClient:
             error_msg = "Ollama ne bahut zyada time le liya (timeout 120s)"
             print(f"❌ {error_msg}")
             return f"Error: {error_msg}"
+
+    def generate_stream(self, prompt: str, system_prompt: str = None, temperature: float = 0.7):
+        """
+        LLM se streaming jawab lo — word by word!
+        
+        STREAMING kya hai?
+        ──────────────────
+        Normal: Puri kitaab likho → phir ek baar mein de do
+        Streaming: Ek ek line likhte jao → dete jao
+        
+        YouTube jaisa — poori video download nahi hoti,
+        thoda thoda buffer hote hi dikhana shuru ho jaata hai!
+        
+        GENERATOR kya hai? (yield keyword)
+        ──────────────────────────────────
+        Normal function: return ek baar chalte hai, function khatam.
+        Generator: yield baar baar chalta hai, function PAUSE hota hai, 
+                   phir wahi se continue karta hai.
+        
+        Socho jaise chai ki tapri:
+        return = poori chai ek baar mein de do
+        yield  = thoda thoda cup mein daalte jao
+        """
+        
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": True,         # ← YAHI farak hai! True = word by word
+            "options": {
+                "temperature": temperature,
+                "num_predict": 1024,
+            }
+        }
+        
+        if system_prompt:
+            payload["system"] = system_prompt
+        
+        try:
+            # stream=True = response ek baar mein nahi, thoda thoda aayega
+            response = requests.post(
+                f"{self.base_url}/api/generate",
+                json=payload,
+                timeout=120,
+                stream=True          # ← requests library ko bolo: data stream karo
+            )
+            
+            if response.status_code == 200:
+                # iter_lines() = ek ek line padho jaise aaye
+                for line in response.iter_lines():
+                    if line:
+                        data = json.loads(line)
+                        token = data.get("response", "")
+                        if token:
+                            yield token    # ← Har word TURANT bhejo!
+                        
+                        # Jab "done" aa jaye = generation complete
+                        if data.get("done", False):
+                            break
+            else:
+                yield f"Error: Ollama status {response.status_code}"
+                
+        except requests.ConnectionError:
+            yield "Error: Ollama se connect nahi ho pa raha!"
+        except requests.Timeout:
+            yield "Error: Timeout — 120s se zyada time lag gaya"
+
     
     def build_rag_prompt(self, question: str, context: str, teacher_type: str = "english") -> tuple:
         """
