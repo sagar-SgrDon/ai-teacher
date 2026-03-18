@@ -55,19 +55,21 @@ User Question
 
 ---
 
-### 2. Python 3.10+
+### 2. Python 3.10 – 3.12
 
 **What:** Backend language. All AI logic is in Python.
 
-| OS          | Install                                                                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------------------------- |
-| **Windows** | Download from [python.org](https://www.python.org/downloads/) → ⚠️ **CHECK "Add Python to PATH"** during install! |
-| **Mac**     | `brew install python`                                                                                             |
-| **Linux**   | `sudo apt install python3 python3-venv python3-pip`                                                               |
+> ⚠️ **Python 3.13+ is NOT supported** — ChromaDB depends on Pydantic v1 which is incompatible with Python 3.13+. Use **Python 3.12** (recommended).
 
-**Verify:** `python --version` → should show 3.10 or higher
+| OS          | Install                                                                                                                       |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Windows** | Download **3.12.x** from [python.org](https://www.python.org/downloads/release/python-31210/) → ⚠️ **CHECK "Add Python to PATH"** during install! Or run: `py install 3.12` |
+| **Mac**     | `brew install python@3.12`                                                                                                    |
+| **Linux**   | `sudo apt install python3.12 python3.12-venv python3.12-dev`                                                                  |
 
-> ⚠️ **Windows users:** If `python` doesn't work, try `python3`. If neither works, Python is NOT in your PATH — reinstall and check "Add to PATH".
+**Verify:** `python --version` → should show 3.10, 3.11, or 3.12
+
+> ⚠️ **Windows users:** If `python` doesn't work, try `py -3.12` or `python3`. If neither works, Python is NOT in your PATH — reinstall and check "Add to PATH".
 
 ---
 
@@ -136,8 +138,9 @@ cd ai-teacher
 ### Step 2: Backend Setup
 
 ```bash
-# Create Python virtual environment
-python -m venv venv
+# Create Python virtual environment (must use Python 3.10–3.12)
+py -3.12 -m venv venv            # Windows (install 3.12 first if needed: py install 3.12)
+# OR: python3.12 -m venv venv   # Mac / Linux
 
 # Activate it
 source venv/Scripts/activate     # Windows (Git Bash)
@@ -344,7 +347,9 @@ Tested on GTX 1650, 16GB RAM:
 | Problem                              | Solution                                                        |
 | ------------------------------------ | --------------------------------------------------------------- |
 | `ollama serve` → port already in use | Ollama is already running — ignore this error                   |
-| `python` command not found           | Use `python3` or reinstall Python with "Add to PATH" checked    |
+| `python` command not found           | Use `py -3.12` or `python3` or reinstall Python with "Add to PATH" checked |
+| ChromaDB Pydantic error on startup   | You're on Python 3.13+. Recreate venv with 3.12: `py -3.12 -m venv venv` |
+| ChromaDB `PanicException` on startup | Delete `backend/chroma_db/` and rebuild: `python backend/scripts/build_vectordb.py` |
 | `npm` command not found              | Install Node.js from [nodejs.org](https://nodejs.org/)          |
 | Frontend can't connect to backend    | Make sure backend is running on port 8000                       |
 | Very slow responses (>2 min)         | Check if Ollama is using GPU: `ollama ps`                       |

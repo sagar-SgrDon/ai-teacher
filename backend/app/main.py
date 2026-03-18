@@ -47,7 +47,9 @@ Socho jaise restaurant subah khulne se pehle kitchen ready karta hai.
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+import json
 
 # Apne modules import karo
 from .rag.retriever import RAGRetriever
@@ -255,3 +257,124 @@ async def ask_question(request: QuestionRequest):
             status_code=500,
             detail=f"Kuch galat ho gaya: {str(e)}"
         )
+
+
+# ============================================================
+# STREAMING ENDPOINT — ChatGPT jaisa live response!
+# ============================================================
+
+@app.post("/ask/stream")
+async def ask_question_stream(request: QuestionRequest):
+    """
+    Streaming version of /ask — response word by word aata hai!
+    
+    StreamingResponse kya hai?
+    ─────────────────────────
+    Normal response: Poora data ready karo → phir bhejo
+    Streaming response: Thoda thoda data bhejte jao → client dikhata jaye
+    
+    SSE (Server-Sent Events) kya hai?
+    ─────────────────────────────────
+    Ek technique jismein server client ko CONTINUOUSLY data bhejta raha.
+    Client ek baar connect karta hai, phir server jab chahe data push kare.
+    
+    ChatGPT, Claude, Gemini — sab SSE use karte hain streaming ke liye!
+    
+    "text/event-stream" = browser ko batao "yeh ek SSE connection hai"
+    """
+    
+    # Teacher chuno
+    if request.teacher_type == "english":
+        teacher = english_teacher
+    elif request.teacher_type == "coding":
+        teacher = coding_teacher
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unknown teacher type: '{request.teacher_type}'"
+        )
+    
+    if teacher is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Server abhi ready nahi hai."
+        )
+    
+    # ---- Streaming generator function ----
+    async def stream_response():
+        """
+        Yeh function yield karta hai — har token ke liye ek SSE event.
+        
+        SSE format:
+        data: {"token": "Hello"}\n\n  ← ek event
+        data: {"token": " world"}\n\n  ← doosra event
+        data: [DONE]\n\n               ← signal: khatam!
+        """
+        
+        # Step 1: RAG search (non-streaming — fast hai)
+        search_results = teacher.rag.search(
+            request.question, 
+            teacher_type=teacher.teacher_type
+        )
+        context = teacher.rag.format_context(search_results)
+        sources = [r["topic"] for r in search_results]
+        
+        # Step 2: Prompt banao
+        prompt, system_prompt = teacher.llm.build_rag_prompt(
+            question=request.question,
+            context=context,
+            teacher_type=teacher.teacher_type
+        )
+        
+        # Step 3: Metadata pehle bhejo (sources, teacher info)
+        meta = {
+            "type": "meta",
+            "sources": sources,
+            "teacher": f"{'English Teacher 🇬🇧' if request.teacher_type == 'english' else 'Coding Teacher 💻'}"
+        }
+        yield f"data: {json.dumps(meta)}\n\n"
+        
+        # Step 4: Tokens stream karo — word by word!
+        full_answer = ""
+        for token in teacher.llm.generate_stream(
+            prompt=prompt, 
+            system_prompt=system_prompt
+        ):
+            full_answer += token
+            yield f"data: {json.dumps({'type': 'token', 'token': token})}\n\n"
+        
+        # Step 5: Verification (optional — streaming ke baad)
+        confidence = "unverified"
+        is_verified = False
+        
+        if request.verify:
+            verification = teacher.verifier.verify(
+                question=request.question,
+                answer=full_answer,
+                context=context
+            )
+            confidence = verification.get("confidence", "unverified")
+            is_verified = verification.get("is_verified", False)
+            
+            # Agar verified answer alag hai toh bhejo
+            verified_answer = verification.get("verified_answer", "")
+            if verified_answer and verified_answer != full_answer:
+                yield f"data: {json.dumps({'type': 'replace', 'text': verified_answer})}\n\n"
+        
+        # Step 6: Final metadata bhejo
+        done = {
+            "type": "done",
+            "confidence": confidence,
+            "is_verified": is_verified,
+        }
+        yield f"data: {json.dumps(done)}\n\n"
+        yield "data: [DONE]\n\n"
+    
+    return StreamingResponse(
+        stream_response(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
