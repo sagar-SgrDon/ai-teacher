@@ -2,16 +2,17 @@
 
 > A fully local, privacy-first AI teaching system built for learning. No APIs. No cloud. Your laptop is the classroom.
 
-| Spec | Value |
-|---|---|
-| **Hardware** | GTX 1650 GPU, 16GB RAM |
-| **LLM** | phi3:mini via Ollama (local) |
-| **Vector DB** | ChromaDB (local, persistent) |
-| **Embeddings** | all-MiniLM-L6-v2 (384-dim) |
-| **Backend** | Python FastAPI |
-| **Frontend** | React + Vite + TypeScript |
-| **Styling** | Tailwind CSS v4 + shadcn/ui |
-| **DevOps** | Docker, GitHub Actions |
+| Spec           | Value                        |
+| -------------- | ---------------------------- |
+| **Python**     | 3.10 – 3.12 (⚠️ 3.13+ not supported) |
+| **Hardware**   | GTX 1650 GPU, 16GB RAM       |
+| **LLM**        | phi3:mini via Ollama (local) |
+| **Vector DB**  | ChromaDB (local, persistent) |
+| **Embeddings** | all-MiniLM-L6-v2 (384-dim)   |
+| **Backend**    | Python FastAPI               |
+| **Frontend**   | React + Vite + TypeScript    |
+| **Styling**    | Tailwind CSS v4 + shadcn/ui  |
+| **DevOps**     | Docker, GitHub Actions       |
 
 ---
 
@@ -76,21 +77,21 @@ sequenceDiagram
 
     User->>FE: "How to solve Two Sum?"
     FE->>API: POST /ask {question, teacher_type: "coding"}
-    
+
     Note over API: Stage 1: Route to correct teacher
-    
+
     API->>RAG: search("Two Sum", collection="coding")
     Note over RAG: Stage 2: Semantic search in ChromaDB
     RAG-->>API: Top 3 relevant knowledge chunks
-    
+
     API->>LLM: prompt = context + question
     Note over LLM: Stage 3: Generate answer with context
     LLM-->>API: "Use a hash map. For each number..."
-    
+
     API->>VER: verify(question, answer, context)
     Note over VER: Stage 4: Self-verification (temp=0.3)
     VER-->>API: {is_verified: true, confidence: "high"}
-    
+
     Note over API: Stage 5: Build final response
     API-->>FE: JSON {answer, confidence, sources}
     FE-->>User: Display answer with confidence badge
@@ -98,13 +99,13 @@ sequenceDiagram
 
 ### Why this order matters
 
-| Stage | What | Why | Without it |
-|---|---|---|---|
-| **1. Route** | Pick English/Coding teacher | Different system prompts, different knowledge | Wrong personality, wrong data |
-| **2. RAG Search** | Find relevant knowledge | Give LLM factual reference material | Hallucination — LLM makes stuff up |
-| **3. LLM Generate** | Create answer with context | Context = "open book exam" for the AI | Unreliable answers |
-| **4. Verify** | Double-check the answer | Catch obvious factual errors | Wrong info reaches the user |
-| **5. Respond** | Send to user with metadata | Confidence score helps user judge reliability | User blindly trusts everything |
+| Stage               | What                        | Why                                           | Without it                         |
+| ------------------- | --------------------------- | --------------------------------------------- | ---------------------------------- |
+| **1. Route**        | Pick English/Coding teacher | Different system prompts, different knowledge | Wrong personality, wrong data      |
+| **2. RAG Search**   | Find relevant knowledge     | Give LLM factual reference material           | Hallucination — LLM makes stuff up |
+| **3. LLM Generate** | Create answer with context  | Context = "open book exam" for the AI         | Unreliable answers                 |
+| **4. Verify**       | Double-check the answer     | Catch obvious factual errors                  | Wrong info reaches the user        |
+| **5. Respond**      | Send to user with metadata  | Confidence score helps user judge reliability | User blindly trusts everything     |
 
 ---
 
@@ -120,11 +121,11 @@ User Question → Embedding Model (text → 384 numbers) → ChromaDB Search →
 
 **Key design decisions:**
 
-| Decision | Choice | Rationale |
-|---|---|---|
-| Embedding model | all-MiniLM-L6-v2 | Only 80MB, runs on CPU, good quality for size |
-| Vector dimensions | 384 | Balance between accuracy and speed |
-| Top-K results | 3 | Sweet spot — enough context without noise |
+| Decision             | Choice           | Rationale                                      |
+| -------------------- | ---------------- | ---------------------------------------------- |
+| Embedding model      | all-MiniLM-L6-v2 | Only 80MB, runs on CPU, good quality for size  |
+| Vector dimensions    | 384              | Balance between accuracy and speed             |
+| Top-K results        | 3                | Sweet spot — enough context without noise      |
 | Separate collections | english / coding | Prevents cross-contamination of search results |
 
 **Core methods:**
@@ -193,12 +194,13 @@ LLM's Answer → Verification Prompt → Same LLM (temp=0.3) → Parse → Verdi
 
 **One-line:** Each teacher is a personality wrapper around the same RAG+LLM+Verifier pipeline.
 
-| File | Class | System Prompt | Knowledge Collection |
-|---|---|---|---|
-| `english_teacher.py` | `EnglishTeacher` | "Friendly English teacher, correct grammar, give examples" | `english_knowledge` |
-| `coding_teacher.py` | `CodingTeacher` | "Coding tutor, explain DSA, mention complexity" | `coding_knowledge` |
+| File                 | Class            | System Prompt                                              | Knowledge Collection |
+| -------------------- | ---------------- | ---------------------------------------------------------- | -------------------- |
+| `english_teacher.py` | `EnglishTeacher` | "Friendly English teacher, correct grammar, give examples" | `english_knowledge`  |
+| `coding_teacher.py`  | `CodingTeacher`  | "Coding tutor, explain DSA, mention complexity"            | `coding_knowledge`   |
 
 **Design Pattern — Duck Typing:**
+
 ```python
 # Both teachers have the SAME method signature:
 english_teacher.ask(question) → {answer, confidence, sources, ...}
@@ -217,18 +219,20 @@ result = teacher.ask(question)        # same interface!
 
 **Endpoints:**
 
-| Method | Path | Purpose | Request Body |
-|---|---|---|---|
-| `GET` | `/health` | Check if server + Ollama are running | None |
-| `POST` | `/ask` | Ask a question to a teacher | `{question, teacher_type, verify}` |
+| Method | Path      | Purpose                              | Request Body                       |
+| ------ | --------- | ------------------------------------ | ---------------------------------- |
+| `GET`  | `/health` | Check if server + Ollama are running | None                               |
+| `POST` | `/ask`    | Ask a question to a teacher          | `{question, teacher_type, verify}` |
 
 **Key concepts used:**
+
 - **Pydantic BaseModel** — validates request/response format automatically
 - **CORS Middleware** — allows frontend (different port) to talk to backend
 - **Startup Event** — loads models once at server start, not per-request
 - **HTTPException** — proper error responses with status codes
 
 **Startup flow:**
+
 ```
 Server starts → Load RAGRetriever (embedding model + ChromaDB)
              → Load OllamaClient (connect to Ollama)
@@ -244,10 +248,10 @@ Server starts → Load RAGRetriever (embedding model + ChromaDB)
 
 ### Knowledge Base Stats
 
-| Collection | Items | Categories |
-|---|---|---|
-| English | 14 | Grammar (7), Vocabulary (3), Conversation (3), Writing (1) |
-| Coding | 14 | Arrays (3), Strings (2), Linked List (2), Stack (1), Trees (2), DP (2), Search (1), Hash Map (1) |
+| Collection | Items | Categories                                                                                       |
+| ---------- | ----- | ------------------------------------------------------------------------------------------------ |
+| English    | 14    | Grammar (7), Vocabulary (3), Conversation (3), Writing (1)                                       |
+| Coding     | 14    | Arrays (3), Strings (2), Linked List (2), Stack (1), Trees (2), DP (2), Search (1), Hash Map (1) |
 
 ### Coding Knowledge Item Schema
 
@@ -310,52 +314,53 @@ ai-teacher/
 
 ### Frontend
 
-| Technology | Version | Purpose |
-|---|---|---|
-| React | 19.x | UI framework — component-based architecture |
-| Vite | 8.x | Build tool — blazing fast HMR, instant dev server |
-| TypeScript | 5.x | Type safety — catch bugs at compile time |
-| Tailwind CSS | v4 | Utility-first CSS — rapid UI development |
-| shadcn/ui | latest | Premium UI components — buttons, dialogs, cards |
-| Framer Motion | 12.x | Smooth animations — transitions, gestures |
-| Zustand | 5.x | State management — simple, fast, 10-line setup |
-| React Router | v7 | Page routing — Topics page, Chat page |
-| Lucide React | latest | Icon library — 1500+ clean icons |
-| Axios | 1.x | HTTP client — API calls with interceptors |
-| TanStack Query | v5 | Server state — caching, retries, loading states |
-| Vitest | latest | Unit testing — fast, Vite-native |
+| Technology     | Version | Purpose                                           |
+| -------------- | ------- | ------------------------------------------------- |
+| React          | 19.x    | UI framework — component-based architecture       |
+| Vite           | 7.x     | Build tool — blazing fast HMR, instant dev server |
+| TypeScript     | 5.x     | Type safety — catch bugs at compile time          |
+| Tailwind CSS   | v4      | Utility-first CSS — rapid UI development          |
+| shadcn/ui      | latest  | Premium UI components — buttons, dialogs, cards   |
+| Framer Motion  | 12.x    | Smooth animations — transitions, gestures         |
+| Zustand        | 5.x     | State management — simple, fast, 10-line setup    |
+| React Router   | v7      | Page routing — Topics page, Chat page             |
+| Lucide React   | latest  | Icon library — 1500+ clean icons                  |
+| Axios          | 1.x     | HTTP client — API calls with interceptors         |
+| TanStack Query | v5      | Server state — caching, retries, loading states   |
+| Vitest         | latest  | Unit testing — fast, Vite-native                  |
 
 ### Backend
 
-| Technology | Purpose |
-|---|---|
-| Python FastAPI | REST API framework |
-| Ollama + phi3:mini (2.2GB) | Local LLM inference |
-| ChromaDB | Vector database for RAG |
-| Sentence-Transformers | Text embeddings (all-MiniLM-L6-v2) |
-| Pydantic | Request/response validation |
-| Pytest | Backend unit testing |
+| Technology                 | Purpose                            |
+| -------------------------- | ---------------------------------- |
+| Python 3.10–3.12           | ⚠️ 3.13+ breaks ChromaDB (Pydantic v1 incompatibility) |
+| Python FastAPI             | REST API framework                 |
+| Ollama + phi3:mini (2.2GB) | Local LLM inference                |
+| ChromaDB                   | Vector database for RAG            |
+| Sentence-Transformers      | Text embeddings (all-MiniLM-L6-v2) |
+| Pydantic                   | Request/response validation        |
+| Pytest                     | Backend unit testing               |
 
 ### DevOps & Infrastructure
 
-| Technology | Purpose | Cost |
-|---|---|---|
-| Docker + Compose | Containerization — consistent env across machines | Free |
-| GitHub Actions | CI/CD — auto test + lint on every push | Free (2000 min/month) |
-| Husky + lint-staged | Pre-commit hooks — check code before commit | Free |
-| ESLint + Prettier | Code quality + auto-formatting | Free |
-| Vercel | Frontend hosting (production) | Free tier |
-| Railway / Render | Backend hosting (production) | Free tier |
+| Technology          | Purpose                                           | Cost                  |
+| ------------------- | ------------------------------------------------- | --------------------- |
+| Docker + Compose    | Containerization — consistent env across machines | Free                  |
+| GitHub Actions      | CI/CD — auto test + lint on every push            | Free (2000 min/month) |
+| Husky + lint-staged | Pre-commit hooks — check code before commit       | Free                  |
+| ESLint + Prettier   | Code quality + auto-formatting                    | Free                  |
+| Vercel              | Frontend hosting (production)                     | Free tier             |
+| Railway / Render    | Backend hosting (production)                      | Free tier             |
 
 ### Future Additions
 
-| Technology | Purpose |
-|---|---|
+| Technology        | Purpose             |
+| ----------------- | ------------------- |
 | React Three Fiber | 3D avatar rendering |
-| Ready Player Me | Avatar generator |
-| Whisper | Speech-to-text |
-| Piper TTS | Text-to-speech |
-| Rhubarb Lip Sync | Avatar lip syncing |
+| Ready Player Me   | Avatar generator    |
+| Whisper           | Speech-to-text      |
+| Piper TTS         | Text-to-speech      |
+| Rhubarb Lip Sync  | Avatar lip syncing  |
 
 ---
 
@@ -385,39 +390,39 @@ Deploy (CD) — on main branch
 
 ## 8. Design Patterns
 
-| Pattern | Where | What it does |
-|---|---|---|
-| **RAG** | Retriever + LLM | Grounds LLM responses in factual data |
-| **Self-Verification** | Verifier | Same LLM reviews its own answer |
-| **Dependency Injection** | Verifier takes LLM client | Swap LLM without changing verifier code |
-| **Duck Typing** | EnglishTeacher / CodingTeacher | Same `.ask()` interface, different behavior |
-| **Component Architecture** | React frontend | Reusable, isolated UI blocks |
-| **Single Source of Truth** | config.py, Zustand stores | All settings/state in one place |
-| **Pipeline** | RAG → LLM → Verify | Each stage transforms data for the next |
-| **Separation of Concerns** | rag/ llm/ verification/ | Each module does ONE job well |
+| Pattern                    | Where                          | What it does                                |
+| -------------------------- | ------------------------------ | ------------------------------------------- |
+| **RAG**                    | Retriever + LLM                | Grounds LLM responses in factual data       |
+| **Self-Verification**      | Verifier                       | Same LLM reviews its own answer             |
+| **Dependency Injection**   | Verifier takes LLM client      | Swap LLM without changing verifier code     |
+| **Duck Typing**            | EnglishTeacher / CodingTeacher | Same `.ask()` interface, different behavior |
+| **Component Architecture** | React frontend                 | Reusable, isolated UI blocks                |
+| **Single Source of Truth** | config.py, Zustand stores      | All settings/state in one place             |
+| **Pipeline**               | RAG → LLM → Verify             | Each stage transforms data for the next     |
+| **Separation of Concerns** | rag/ llm/ verification/        | Each module does ONE job well               |
 
 ---
 
 ## 9. Build Progress
 
-| Phase | Step | Status | Tech |
-|---|---|---|---|
-| **Foundation** | 1. Ollama test | ✅ Done | `scripts/test_ollama.py` |
-| | 2. Knowledge Base | ✅ Done | `data/kb/*.json` |
-| | 3. Vector DB | ✅ Done | `scripts/build_vectordb.py` |
-| **Core Pipeline** | 4. RAG Retriever | ✅ Done | `app/rag/retriever.py` |
-| | 5. LLM Client | ✅ Done | `app/llm/ollama_client.py` |
-| | 6. Verifier | ✅ Done | `app/verification/verifier.py` |
-| **API** | 7. FastAPI | ✅ Done | `app/main.py` |
-| | 8. Teachers | ✅ Done | `app/teachers/*.py` |
-| **Frontend** | 9. React+Vite setup | ✅ Done | TypeScript template |
-| | 10. Tailwind + shadcn | 🔲 Next | UI framework install |
-| | 11. Chat UI | 🔲 Planned | Components + Pages |
-| | 12. Topics UI | 🔲 Planned | Udemy-style course view |
-| **DevOps** | 13. Docker | 🔲 Planned | Containerization |
-| | 14. GitHub Actions | 🔲 Planned | CI/CD pipeline |
-| **Voice** | 15. Whisper+Piper | 🔲 Future | STT + TTS |
-| **Avatar** | 16. 3D Avatar | 🔲 Future | React Three Fiber |
+| Phase             | Step                  | Status     | Tech                           |
+| ----------------- | --------------------- | ---------- | ------------------------------ |
+| **Foundation**    | 1. Ollama test        | ✅ Done    | `scripts/test_ollama.py`       |
+|                   | 2. Knowledge Base     | ✅ Done    | `data/kb/*.json`               |
+|                   | 3. Vector DB          | ✅ Done    | `scripts/build_vectordb.py`    |
+| **Core Pipeline** | 4. RAG Retriever      | ✅ Done    | `app/rag/retriever.py`         |
+|                   | 5. LLM Client         | ✅ Done    | `app/llm/ollama_client.py`     |
+|                   | 6. Verifier           | ✅ Done    | `app/verification/verifier.py` |
+| **API**           | 7. FastAPI            | ✅ Done    | `app/main.py`                  |
+|                   | 8. Teachers           | ✅ Done    | `app/teachers/*.py`            |
+| **Frontend**      | 9. React+Vite setup   | ✅ Done    | TypeScript template            |
+|                   | 10. Tailwind + shadcn | ✅ Done    | Tailwind v4, shadcn Nova       |
+|                   | 11. Chat UI           | ✅ Done    | Components + Zustand + API     |
+|                   | 12. Topics UI         | 🔲 Planned | Udemy-style course view        |
+| **DevOps**        | 13. Docker            | 🔲 Planned | Containerization               |
+|                   | 14. GitHub Actions    | 🔲 Planned | CI/CD pipeline                 |
+| **Voice**         | 15. Whisper+Piper     | 🔲 Future  | STT + TTS                      |
+| **Avatar**        | 16. 3D Avatar         | 🔲 Future  | React Three Fiber              |
 
 ---
 
@@ -425,13 +430,13 @@ Deploy (CD) — on main branch
 
 Tested on GTX 1650, 16GB RAM, phi3:mini (2.2GB):
 
-| Operation | Time | Notes |
-|---|---|---|
-| RAG Search | ~0.5s | Embedding model cached after first load |
-| LLM Generation (no verify) | ~30s | Single inference pass |
-| LLM Generation (with verify) | ~60s | Two inference passes |
-| Server startup | ~10s | Model loading + ChromaDB connection |
-| Embedding model first download | ~10s | 80MB, cached after first run |
+| Operation                      | Time  | Notes                                   |
+| ------------------------------ | ----- | --------------------------------------- |
+| RAG Search                     | ~0.5s | Embedding model cached after first load |
+| LLM Generation (no verify)     | ~30s  | Single inference pass                   |
+| LLM Generation (with verify)   | ~60s  | Two inference passes                    |
+| Server startup                 | ~10s  | Model loading + ChromaDB connection     |
+| Embedding model first download | ~10s  | 80MB, cached after first run            |
 
 ---
 
@@ -458,11 +463,11 @@ npm run build                                         # Production build → dis
 
 ## 12. Bugs Found & Fixed
 
-| Bug | Where | Fix | Lesson |
-|---|---|---|---|
-| `is_verified: true` when verify=false | `english_teacher.py`, `coding_teacher.py` | Changed default to `is_verified: False` | Default values must reflect actual state |
-| `coding_tutor` variable not found | `main.py` | Renamed to `coding_teacher` | Always rename in ALL places when refactoring |
+| Bug                                   | Where                                     | Fix                                     | Lesson                                       |
+| ------------------------------------- | ----------------------------------------- | --------------------------------------- | -------------------------------------------- |
+| `is_verified: true` when verify=false | `english_teacher.py`, `coding_teacher.py` | Changed default to `is_verified: False` | Default values must reflect actual state     |
+| `coding_tutor` variable not found     | `main.py`                                 | Renamed to `coding_teacher`             | Always rename in ALL places when refactoring |
 
 ---
 
-*This document is updated as the project progresses. Last updated: Step 9 — React+Vite setup, full tech stack finalized.*
+_This document is updated as the project progresses. Last updated: Step 11 — Chat UI complete, frontend-backend connected._
