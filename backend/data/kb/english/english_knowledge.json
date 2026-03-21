@@ -49,6 +49,48 @@
         "difficulty": "beginner"
     },
     {
+        "id": "eng_grammar_008",
+        "topic": "Tenses - Future Simple",
+        "category": "grammar",
+        "content": "Future Simple Tense is used for decisions made at the moment, predictions, and promises. Structure: Subject + will + base verb. Examples: 'I will call you tomorrow.' 'It will rain today.' 'I will help you with your homework.' For plans already made, use 'going to': 'I am going to visit my parents this weekend.' Common mistakes: 'I will going to school' → CORRECT: 'I will go to school' or 'I am going to go to school.' Negative: 'I will not (won't) forget.' Question: 'Will you come to the party?'",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_grammar_009",
+        "topic": "Tenses - Past Continuous",
+        "category": "grammar",
+        "content": "Past Continuous Tense is used for actions that were happening at a specific time in the past, or when one action interrupted another. Structure: Subject + was/were + verb-ing. Examples: 'I was studying when she called.' 'They were playing cricket at 5 PM yesterday.' 'It was raining all morning.' Use with Past Simple for interrupted actions: 'I was cooking when the doorbell rang.' Common mistakes: 'I was study when he came' → CORRECT: 'I was studying when he came.' 'We was playing' → CORRECT: 'We were playing.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_grammar_010",
+        "topic": "Modal Verbs - Can, Could, Should, Must",
+        "category": "grammar",
+        "content": "Modal verbs add meaning to the main verb — ability, permission, advice, obligation. 'can' = ability/permission: 'I can swim.' 'Can I use your phone?' 'could' = past ability/polite request: 'I could swim when I was 5.' 'Could you help me?' 'should' = advice: 'You should eat healthy food.' 'You shouldn't stay up late.' 'must' = strong obligation: 'You must wear a seatbelt.' 'must not' = prohibition. Common mistakes: 'I can to swim' → CORRECT: 'I can swim.' (no 'to' after modals). 'She must goes' → CORRECT: 'She must go.' (base verb after modals).",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_grammar_011",
+        "topic": "Conditionals - Zero, First, and Second",
+        "category": "grammar",
+        "content": "Conditionals express 'if...then' situations. Zero conditional = general truth: 'If you heat water to 100°C, it boils.' (If + present simple, present simple). First conditional = real future possibility: 'If it rains tomorrow, I will stay home.' (If + present simple, will + base verb). Second conditional = unreal/imaginary: 'If I won the lottery, I would travel the world.' (If + past simple, would + base verb). Common mistakes: 'If I will go, I will call you' → CORRECT: 'If I go, I will call you.' 'If I would have money, I would buy a car' → CORRECT: 'If I had money, I would buy a car.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_grammar_012",
+        "topic": "Subject-Verb Agreement",
+        "category": "grammar",
+        "content": "Subject-Verb Agreement means the verb must match the subject in number (singular/plural). Singular subject = singular verb: 'He goes to school.' 'The cat is sleeping.' Plural subject = plural verb: 'They go to school.' 'The cats are sleeping.' Tricky cases: 'Everyone' is singular: 'Everyone is here.' NOT 'Everyone are here.' 'The team' (group) is singular: 'The team is ready.' Compound subjects with 'and' = plural: 'Tom and Jerry are friends.' With 'or/neither...nor' = verb matches nearest subject: 'Neither the students nor the teacher was absent.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_grammar_013",
+        "topic": "Reported Speech - Direct to Indirect",
+        "category": "grammar",
+        "content": "Reported (indirect) speech is when you tell someone what another person said. Direct: She said, 'I am tired.' → Indirect: She said that she was tired. Rules: Present Simple → Past Simple: 'I play' → she said she played. Present Continuous → Past Continuous: 'I am playing' → she said she was playing. 'Will' → 'Would': 'I will come' → she said she would come. 'Can' → 'Could': 'I can help' → she said she could help. Pronouns change: 'I' → 'she/he', 'my' → 'her/his'. Common mistake: 'She said that I am tired' → CORRECT: 'She said that she was tired.'",
+        "difficulty": "advanced"
+    },
+    {
         "id": "eng_vocab_001",
         "topic": "Vocabulary - Daily Routine Words",
         "category": "vocabulary",
@@ -67,6 +109,27 @@
         "topic": "Vocabulary - Phrasal Verbs",
         "category": "vocabulary",
         "content": "Common Phrasal Verbs: 'look up' = search for information ('Look up this word in the dictionary.'), 'give up' = stop trying ('Don't give up, keep trying!'), 'break down' = stop working ('My car broke down.'), 'turn on/off' = start/stop a device ('Turn off the light.'), 'pick up' = collect or learn ('I picked up some groceries.' or 'She picked up Spanish quickly.'), 'put off' = postpone ('Don't put off your homework.'), 'run out of' = have no more ('We ran out of milk.'), 'come up with' = think of an idea ('She came up with a great plan.')",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_vocab_004",
+        "topic": "Vocabulary - Common Collocations",
+        "category": "vocabulary",
+        "content": "Collocations are word pairs that naturally go together. English speakers say 'make a decision' NOT 'do a decision'. Common collocations: 'make' collocations: make a mistake, make progress, make an effort, make a complaint, make money. 'do' collocations: do homework, do the dishes, do business, do a favor, do exercise. 'take' collocations: take a photo, take a break, take notes, take a shower, take advice. 'have' collocations: have a conversation, have lunch, have fun, have an argument. Common mistakes: 'do a mistake' → CORRECT: 'make a mistake'. 'make homework' → CORRECT: 'do homework.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_vocab_005",
+        "topic": "Vocabulary - Commonly Confused Words",
+        "category": "vocabulary",
+        "content": "Words that look or sound similar but have different meanings: 'affect' (verb, to influence) vs 'effect' (noun, result): 'The weather affects my mood.' 'The effect of the medicine was immediate.' 'their' (belonging to them) vs 'there' (place) vs 'they're' (they are). 'its' (belonging to it) vs 'it's' (it is/it has). 'then' (after that) vs 'than' (comparison): 'She is taller than me.' 'We ate, then went home.' 'lose' (misplace) vs 'loose' (not tight). 'accept' (agree) vs 'except' (excluding). 'advice' (noun) vs 'advise' (verb): 'Can you give me advice?' 'I advise you to study.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_vocab_006",
+        "topic": "Vocabulary - Common English Idioms",
+        "category": "vocabulary",
+        "content": "Idioms are phrases where the meaning is different from the individual words. 'Break the ice' = start a conversation: 'He told a joke to break the ice.' 'Piece of cake' = very easy: 'The exam was a piece of cake.' 'Hit the nail on the head' = be exactly right: 'You hit the nail on the head with that analysis.' 'Under the weather' = feeling sick: 'I'm feeling under the weather today.' 'Cost an arm and a leg' = very expensive: 'That phone costs an arm and a leg.' 'Let the cat out of the bag' = reveal a secret. 'Once in a blue moon' = very rarely: 'I eat fast food once in a blue moon.'",
         "difficulty": "intermediate"
     },
     {
@@ -91,10 +154,136 @@
         "difficulty": "beginner"
     },
     {
+        "id": "eng_conversation_004",
+        "topic": "Conversation - Making Phone Calls",
+        "category": "conversation",
+        "content": "How to make and receive phone calls in English. Answering: 'Hello, this is [name] speaking.' or 'Good morning, [company name], how can I help you?' Calling: 'Hello, this is [name]. I am calling about/regarding [topic].' 'Could I speak to [name], please?' Asking to wait: 'Could you hold on a moment, please?' Taking a message: 'I'm afraid [name] is not available. Can I take a message?' Ending: 'Thank you for calling. Have a good day.' Common mistakes: 'I am [name]' on phone → CORRECT: 'This is [name].' 'Hello, who speaking?' → CORRECT: 'Hello, who is speaking, please?'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_conversation_005",
+        "topic": "Conversation - Expressing Opinions",
+        "category": "conversation",
+        "content": "How to express opinions in English — from mild to strong. Mild: 'I think...', 'I feel that...', 'It seems to me that...' Medium: 'In my opinion...', 'I believe that...', 'From my perspective...' Strong: 'I am convinced that...', 'I strongly believe...', 'There is no doubt that...' Agreeing: 'I agree with you.', 'That's a good point.', 'I see your point.' Disagreeing politely: 'I see your point, but...', 'I understand, however...', 'That's true, but have you considered...?' AVOID: 'You are wrong.' USE: 'I see it differently.' or 'I respectfully disagree.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_conversation_006",
+        "topic": "Conversation - Small Talk and Socializing",
+        "category": "conversation",
+        "content": "Small talk is casual, light conversation to build rapport. Good topics: weather ('Nice weather today, isn't it?'), weekends ('Do you have any plans for the weekend?'), travel ('Have you traveled anywhere interesting recently?'), food ('Have you tried the new restaurant nearby?'), hobbies ('What do you do for fun?'). Avoid: salary, age, weight, religion, politics (too personal). Tips: Ask open-ended questions (not yes/no). Show interest: 'That sounds interesting!' 'Really? Tell me more!' Mirror the other person's energy. Use follow-up questions: 'Where did you go?' 'How was it?'",
+        "difficulty": "beginner"
+    },
+    {
         "id": "eng_writing_001",
         "topic": "Email Writing - Professional",
         "category": "writing",
         "content": "How to write professional emails: Structure: 1) Subject line — clear and specific ('Meeting Request for Project Update'). 2) Greeting — 'Dear Mr./Ms. [Name],' or 'Hi [Name],' for semi-formal. 3) Opening — State purpose: 'I am writing to inquire about...' 4) Body — Keep paragraphs short, one idea per paragraph. 5) Closing — 'Please let me know if you need any further information.' 6) Sign-off — 'Best regards,' 'Kind regards,' 'Sincerely,'. Avoid: ALL CAPS (looks like shouting), too many exclamation marks, slang, emoji in formal emails.",
         "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_pronunciation_001",
+        "topic": "Pronunciation - Silent Letters",
+        "category": "pronunciation",
+        "content": "Many English words have silent letters that are written but not spoken. Silent 'k': know, knife, knee, knock, knight (all start with 'n' sound). Silent 'w': write, wrong, wrap, wrist, answer, sword. Silent 'b': climb, comb, bomb, thumb, lamb, doubt, debt. Silent 'h': hour, honest, honor, heir, ghost. Silent 'l': calm, palm, talk, walk, half, could, should, would. Silent 'g': sign, gnaw, foreign, design. Practice tip: When you learn a new word, always check its pronunciation — don't assume every letter is spoken! Use a dictionary or Google 'pronounce [word]' to hear it.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_pronunciation_002",
+        "topic": "Pronunciation - Homophones",
+        "category": "pronunciation",
+        "content": "Homophones are words that sound the same but have different meanings and spellings. Common homophones: 'their/there/they're' — 'Their house is there. They're going home.' 'to/too/two' — 'I want to go too. Two people came.' 'hear/here' — 'Can you hear me? Come here!' 'write/right' — 'Please write your name. Turn right.' 'sea/see' — 'I can see the sea.' 'know/no' — 'I know the answer is no.' 'flour/flower' — 'Buy flour and a flower.' 'weather/whether' — 'Check the weather. I wonder whether she will come.' These are especially tricky in voice conversations!",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_pronunciation_003",
+        "topic": "Pronunciation - Word Stress Patterns",
+        "category": "pronunciation",
+        "content": "Word stress means saying one syllable LOUDER and LONGER. Wrong stress can confuse listeners. Two-syllable nouns: stress on FIRST syllable: TAble, WAter, TEAcher, PICture. Two-syllable verbs: stress on SECOND syllable: beLIEVE, deCIDE, preSENT, reCORD. Same word, different stress, different meaning: 'PREsent' (noun: gift) vs 'preSENT' (verb: to show). 'REcord' (noun: a record) vs 'reCORD' (verb: to record). Three-syllable words: comPUter, toMOrrow, beAUtiful. Practice: Clap on the stressed syllable to feel the rhythm.",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_pronunciation_004",
+        "topic": "Pronunciation - The TH Sound",
+        "category": "pronunciation",
+        "content": "The 'th' sound does not exist in Hindi, which is why many Indian speakers replace it with 'd', 't', or 'f'. There are TWO 'th' sounds: Voiced 'th' (vibration): this, that, the, they, them, there, those, though, breathe. Unvoiced 'th' (no vibration): think, thank, three, throw, through, thumb, theater, therapy. How to make 'th': Put your tongue TIP gently between your upper and lower teeth, then blow air. Common mistakes: 'I tink' → 'I think'. 'Dis is good' → 'This is good'. 'Tree books' → 'Three books'. Practice: Say 'the three brothers thought through the math problem' slowly.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_scenario_001",
+        "topic": "Speaking Scenario - Ordering at a Restaurant",
+        "category": "speaking_scenarios",
+        "content": "Practice ordering food at a restaurant. Key phrases: Arriving: 'Hello, I have a reservation for two under the name Sharma.' or 'Hi, table for two please.' Ordering: 'Could I have the menu, please?' 'I would like to order the pasta.' 'I'll have the chicken curry, please.' 'Could you recommend something?' Dietary needs: 'I'm vegetarian. What would you recommend?' 'Does this contain nuts? I'm allergic.' During meal: 'Excuse me, could I have some more water?' 'This is delicious!' Bill: 'Could we have the bill, please?' 'Is service charge included?' Practice task: Imagine you are at a restaurant — order a main course, a drink, and ask about dessert.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_scenario_002",
+        "topic": "Speaking Scenario - Visiting a Doctor",
+        "category": "speaking_scenarios",
+        "content": "Practice describing symptoms and talking to a doctor. Key phrases: At reception: 'I have an appointment with Dr. Patel at 3 PM.' 'I would like to see a doctor. I'm not feeling well.' Describing symptoms: 'I have a headache/stomachache/sore throat.' 'I have been feeling dizzy for two days.' 'I have a fever and a runny nose.' 'It hurts when I swallow.' 'The pain is sharp/dull/constant.' Duration: 'It started yesterday.' 'I have had this for a week.' Doctor's questions: 'Where does it hurt?' 'Are you taking any medication?' 'Do you have any allergies?' Practice task: Describe symptoms of a cold to your doctor using complete sentences.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_scenario_003",
+        "topic": "Speaking Scenario - At the Airport",
+        "category": "speaking_scenarios",
+        "content": "Practice English for air travel situations. Check-in: 'I would like to check in for flight AI-302 to Delhi.' 'Here is my passport and booking confirmation.' 'Could I have a window seat, please?' 'I have one carry-on bag and one checked bag.' Security: 'Where should I put my laptop?' Immigration: 'I am here for tourism/business.' 'I will be staying for one week.' 'I am staying at the Marriott Hotel.' Boarding: 'Excuse me, is this gate 14?' 'Could you help me find my seat?' Lost luggage: 'My bag hasn't arrived. My tag number is AI-78452.' 'It's a black suitcase with a red ribbon.' Practice task: Role-play checking in for a flight.",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_scenario_004",
+        "topic": "Speaking Scenario - Shopping and Bargaining",
+        "category": "speaking_scenarios",
+        "content": "Practice English for shopping situations. In a store: 'Excuse me, where can I find the electronics section?' 'Do you have this in a larger size?' 'Can I try this on?' 'How much is this?' Price: 'Is there a discount on this item?' 'That's a bit expensive. Do you have anything more affordable?' 'I'll take it.' or 'I'll think about it, thank you.' Returns: 'I would like to return this. I have the receipt.' 'This doesn't fit. Can I exchange it for a different size?' 'Is there a refund policy?' Online shopping: 'When will my order be delivered?' 'I would like to track my order.' Practice task: Ask about a product, its price, and negotiate politely.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_scenario_005",
+        "topic": "Speaking Scenario - Giving Directions",
+        "category": "speaking_scenarios",
+        "content": "Practice asking for and giving directions in English. Asking: 'Excuse me, could you tell me how to get to the train station?' 'Is there a pharmacy nearby?' 'How far is the museum from here?' Giving directions: 'Go straight for about 200 meters.' 'Turn left/right at the traffic light.' 'It's on your left/right side.' 'Take the first/second turning on the left.' 'Cross the bridge and you'll see it.' 'It's opposite the bank.' 'It's next to the post office.' 'It's between the bookshop and the café.' Landmarks: 'You'll pass a big red building — the station is right after that.' Practice task: Describe how to get from your house to the nearest market.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_scenario_006",
+        "topic": "Speaking Scenario - Making Complaints Politely",
+        "category": "speaking_scenarios",
+        "content": "Practice complaining politely in English without sounding rude. Hotel: 'Excuse me, the air conditioning in my room doesn't seem to be working. Could someone take a look?' Restaurant: 'I'm sorry, but this isn't what I ordered. I asked for the vegetarian option.' 'Excuse me, I've been waiting for 30 minutes. Could you check on my order?' Product: 'I bought this yesterday and it's already not working. I would like a replacement, please.' Service: 'I'm not satisfied with the service. Could I speak to the manager?' Structure: Start with 'Excuse me' or 'I'm sorry but...', describe the problem, then say what you want. AVOID: 'This is terrible!' 'How dare you!' USE: 'I understand mistakes happen, but I would appreciate if this could be resolved.'",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_company_001",
+        "topic": "Company Scenario - Daily Standup Meeting",
+        "category": "speaking_scenarios",
+        "content": "Practice speaking in a daily standup meeting. Structure: 1) What you did yesterday 2) What you will do today 3) Any blockers. Examples: 'Yesterday, I worked on the login feature and fixed a few bugs. Today, I will continue working on the dashboard. I am currently blocked on API integration.' 'I completed the UI changes yesterday. Today, I will start testing. No blockers from my side.' Common mistakes: 'Yesterday I am working' → CORRECT: 'Yesterday I worked.' Practice task: Give your standup update in 3 sentences.",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_company_002",
+        "topic": "Company Scenario - Asking for Help",
+        "category": "speaking_scenarios",
+        "content": "Practice asking help politely in a workplace. Examples: 'Hey, could you help me with this issue?' 'I'm stuck on this bug. Could you take a look when you have time?' 'I tried debugging, but I'm still facing the issue. Any suggestions?' Avoid direct: 'Fix this for me.' Use polite tone. Practice task: Ask your teammate for help on a technical issue.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_company_003",
+        "topic": "Company Scenario - Explaining Your Work",
+        "category": "speaking_scenarios",
+        "content": "Practice explaining your work clearly. Examples: 'I implemented a new feature for user authentication.' 'This change improves performance by reducing API calls.' 'I refactored the code to make it more maintainable.' Tips: Speak clearly, use simple sentences, explain purpose. Practice task: Explain what you are working on in your project.",
+        "difficulty": "intermediate"
+    },
+    {
+        "id": "eng_company_004",
+        "topic": "Company Scenario - Reporting a Bug",
+        "category": "speaking_scenarios",
+        "content": "Practice reporting issues professionally. Examples: 'I found a bug in the checkout flow.' 'The app crashes when I click on the submit button.' 'This issue occurs only on mobile devices.' 'Steps to reproduce: First..., then..., then...'. Practice task: Describe a bug clearly with steps.",
+        "difficulty": "beginner"
+    },
+    {
+        "id": "eng_company_005",
+        "topic": "Company Scenario - Scheduling a Meeting",
+        "category": "speaking_scenarios",
+        "content": "Practice scheduling meetings. Examples: 'Can we schedule a meeting to discuss this?' 'Are you available at 3 PM today?' 'Let's connect tomorrow morning.' 'I'll send a calendar invite.' Practice task: Ask a colleague to schedule a meeting.",
+        "difficulty": "beginner"
     }
 ]
