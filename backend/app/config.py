@@ -101,3 +101,6 @@ GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")  # API key from .env file
 GROQ_MODEL = os.environ.get(
     "GROQ_MODEL", "llama-3.3-70b-versatile"
 )  # Free, best for Hinglish
+GROQ_FALLBACK_MODEL = os.environ.get(
+    "GROQ_FALLBACK_MODEL", "llama-3.1-8b-instant"
+)  # Fallback: 14.4K RPD (14x more daily requests!)
