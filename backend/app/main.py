@@ -58,6 +58,7 @@ from .verification.verifier import AnswerVerifier
 from .teachers.english_teacher import EnglishTeacher
 from .teachers.coding_teacher import CodingTeacher
 from .voice.voice_router import router as voice_router, init_voice_components
+from .voice.tts_service import TTSService
 
 
 # ============================================================
@@ -169,7 +170,8 @@ async def startup():
 
     # Step 3: Voice components connect karo
     print("\n🎤 Setting up voice module...")
-    init_voice_components(retriever, llm_client)
+    tts_service = TTSService()
+    init_voice_components(retriever, llm_client, tts_service)
     app.include_router(voice_router, prefix="/voice")
 
     print("\n✅ AI Teacher Server ready!")
