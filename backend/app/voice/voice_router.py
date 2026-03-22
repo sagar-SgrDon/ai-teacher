@@ -42,6 +42,7 @@ Waise hi, voice_router ko retriever aur llm_client BAHAR se milte hain.
 import time
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from fastapi.responses import FileResponse
 
 # ---- Apne modules import karo ----
 from .conversation_manager import ConversationManager
@@ -74,9 +75,10 @@ voice_logger = VoiceLogger()
 # Yeh BAAD mein set honge — main.py se (dependency injection)
 _retriever = None
 _llm_client = None
+_tts_service = None
 
 
-def init_voice_components(retriever, llm_client):
+def init_voice_components(retriever, llm_client, tts_service=None):
     """
     Main.py se call hoga — heavy components set karo.
 
@@ -89,10 +91,13 @@ def init_voice_components(retriever, llm_client):
     Socho — restaurant subah khulta hai, waiter pehle aata hai,
     phir kitchen ready hota hai, phir waiter ko access milta hai.
     """
-    global _retriever, _llm_client
+    global _retriever, _llm_client, _tts_service
     _retriever = retriever
     _llm_client = llm_client
+    _tts_service = tts_service
     print("✅ Voice Router: Components connected!")
+    if _tts_service:
+        print("   🎧 TTS: enabled")
 
 
 # ============================================================
@@ -113,6 +118,7 @@ class StartSessionRequest(BaseModel):
     """Session shuru karne ka form."""
 
     student_level: str = "beginner"  # Default beginner
+    native_language: str = "english"  # "english" | "hinglish" | "hindi"
 
 
 class StartSessionResponse(BaseModel):
@@ -148,6 +154,7 @@ class TalkResponse(BaseModel):
     latency: dict  # {"stt_ms": 0, "llm_ms": X, "tts_ms": 0, "total_ms": X}
     session_state: dict  # {"mode": "free_talk", "level": "beginner", ...}
     turn_number: int
+    audio_url: str = ""  # TTS audio URL — empty agar TTS disabled/failed
 
 
 # ============================================================
@@ -175,15 +182,25 @@ async def start_session(request: StartSessionRequest):
     doosre ko block nahi karega.
     """
 
-    session_id = conversation_manager.create_session(request.student_level)
+    session_id = conversation_manager.create_session(
+        request.student_level, request.native_language
+    )
 
     # Logger mein session start record karo
     voice_logger.log_session_start(session_id, request.student_level)
 
+    # Greeting language ke hisaab se set karo
+    greetings = {
+        "hinglish": "Hi! Main Emma hoon, tumhari English teacher. Chalo practice shuru karte hain! Batao, aaj tumhara din kaisa raha?",
+        "hindi": "नमस्ते! मैं Emma हूँ, आपकी English teacher। चलिए practice शुरू करते हैं! बताइए, आज आपका दिन कैसा रहा?",
+        "english": "Hi! I'm Emma, your English teacher. Let's start practicing! Tell me about your day.",
+    }
+    greeting = greetings.get(request.native_language, greetings["english"])
+
     return StartSessionResponse(
         session_id=session_id,
         student_level=request.student_level,
-        message="Hi! I'm Emma, your English teacher. Let's start practicing! Tell me about your day.",
+        message=greeting,
     )
 
 
@@ -279,12 +296,17 @@ async def talk_text(request: TextTalkRequest):
             status_code=503, detail="LLM client not initialized! Server restart karo."
         )
 
+    # Session se native_language lo
+    native_language = (
+        session.native_language if hasattr(session, "native_language") else "english"
+    )
     # Prompt banao
     prompt, system_prompt = _llm_client.build_voice_conversation_prompt(
         student_message=student_text,
         conversation_context=conversation_context,
         rag_context=rag_context,
         state=state,
+        native_language=native_language,
     )
 
     # LLM call (JSON mode, 60s timeout)
@@ -349,18 +371,44 @@ async def talk_text(request: TextTalkRequest):
     # ---- Step 11: State machine update ----
     conversation_manager.update_state_after_turn(request.session_id)
 
-    # ---- Step 12: Latency calculate karo ----
+    # Set TTS voice based on native language
+    if _tts_service and native_language != "english":
+        _tts_service.set_voice_for_language(native_language)
+
+    # ---- Step 12: TTS — Emma ki awaaz banao! ----
+    # Teacher ka response + follow-up merge karke audio banao
+    # parsed.tts_text already has merged text (response + follow_up)
+    tts_ms = 0
+    audio_url = ""
+
+    if _tts_service and _tts_service.is_available():
+        try:
+            t_tts_start = time.perf_counter()
+            audio_path = await _tts_service.synthesize(parsed.tts_text)
+            t_tts_end = time.perf_counter()
+            tts_ms = round((t_tts_end - t_tts_start) * 1000)
+
+            if audio_path:
+                # Filename extract karo path se
+                import os
+
+                audio_filename = os.path.basename(audio_path)
+                audio_url = f"/voice/audio/{audio_filename}"
+        except Exception as e:
+            print(f"   ⚠️ TTS failed (non-blocking): {e}")
+
+    # ---- Step 13: Latency calculate karo ----
     t_end = time.perf_counter()
     total_ms = round((t_end - t_start) * 1000)
 
     latency = {
         "stt_ms": 0,  # Text mode — no STT
         "llm_ms": llm_ms,
-        "tts_ms": 0,  # Text mode — no TTS
+        "tts_ms": tts_ms,  # Text mode — no TTS
         "total_ms": total_ms,
     }
 
-    # ---- Step 13: Log everything ----
+    # ---- Step 14: Log everything ----
     session_state = {
         "mode": session.state.mode,
         "student_level": session.student_level,
@@ -380,7 +428,7 @@ async def talk_text(request: TextTalkRequest):
         error=None if parsed.parse_success else "JSON parse used fallback",
     )
 
-    # ---- Step 14: Response bhejo! ----
+    # ---- Step 15: Response bhejo! ----
     return TalkResponse(
         teacher_response=parsed.response,
         follow_up=parsed.follow_up_question,
@@ -388,6 +436,7 @@ async def talk_text(request: TextTalkRequest):
         latency=latency,
         session_state=session_state,
         turn_number=session.current_turn,
+        audio_url=audio_url,
     )
 
 
@@ -461,3 +510,42 @@ async def get_corrections(session_id: str):
         "repeated_mistakes": conversation_manager.get_repeated_mistakes(session_id),
         "stats": voice_logger.get_session_stats(session_id),
     }
+
+
+# ============================================================
+# ENDPOINT 5: Audio — Emma Ki Awaaz Suno! 🎧
+# ============================================================
+
+
+@router.get("/audio/{filename}")
+async def get_audio(filename: str):
+    """
+    GET /voice/audio/{filename}
+
+    TTS se generated audio file serve karo.
+
+    Yeh endpoint audio file ko stream karega browser ko.
+    FileResponse automatically Content-Type set karta hai.
+
+    Background cleanup:
+    ───────────────────
+    Audio serve hone ke baad delete karna chahiye (temp file hai).
+    But abhi simple rakhte hain — cleanup_all() se baad mein karenge.
+    """
+
+    if not _tts_service:
+        raise HTTPException(status_code=503, detail="TTS service not available")
+
+    # TTS service ke temp directory mein dhundho
+    import os
+
+    audio_path = os.path.join(str(_tts_service.temp_dir), filename)
+
+    if not os.path.exists(audio_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+
+    return FileResponse(
+        path=audio_path,
+        media_type="audio/mpeg",
+        filename=filename,
+    )

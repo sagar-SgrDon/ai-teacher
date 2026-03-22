@@ -403,6 +403,7 @@ class OllamaClient:
         conversation_context: str,
         rag_context: str,
         state: dict,
+        native_language: str = "english",
     ) -> tuple:
         """
         Voice conversation ke liye FULL prompt banao.
@@ -454,8 +455,53 @@ class OllamaClient:
         # Socho jaise actor ko script di jaati hai —
         # "tu doctor hai, patient se aise baat kar" — waise hi!
 
-        system_prompt = f"""You are Emma, a warm, encouraging, and highly skilled English speaking teacher.
+        # ---- Native language instructions ----
+        # Yeh LLM ko batata hai ki explanations kis language mein deni hain
+        if native_language == "hinglish":
+            language_instruction = """
+        CRITICAL — LANGUAGE RULE (MUST FOLLOW):
+        You MUST speak in HINGLISH (Hindi + English mix) in all your responses.
+        DO NOT speak in pure English. Mix Hindi words naturally.
+        
+        HINGLISH EXAMPLES (copy this style):
+        - "Dekho, 'goes' nahi chalega yahan. Past ki baat hai toh 'went' use karo. Samjhe?"
+        - "Bahut accha! Tumne sahi bola. Ab ek aur sentence try karo."
+        - "Yeh common galti hai. 'I go' hota hai, 'I goes' nahi. Yaad rakhna!"
+        
+        RULES:
+        - 'response' field MUST be in Hinglish (Hindi + English mix)
+        - 'explanation' in corrections MUST be in Hinglish
+        - 'follow_up_question' MUST be in Hinglish
+        - 'original' and 'corrected' stay in English (they are English sentences)
+        - Use phrases like: Dekho, Samjhe?, Bilkul sahi!, Bahut accha!, Chalo, Socho"""
+            teacher_desc = (
+                "English teacher who ALWAYS explains in Hinglish (Hindi-English mix)"
+            )
+        elif native_language == "hindi":
+            language_instruction = """
+        CRITICAL — LANGUAGE RULE (MUST FOLLOW):
+        You MUST speak in HINDI for explanations. Use English only for grammar terms and example sentences.
+        
+        HINDI EXAMPLES (copy this style):
+        - "यहाँ 'goes' गलत है। बीते हुए कल की बात है तो 'went' लगाओ। सही वाक्य: 'I went to school yesterday.'"
+        - "बहुत अच्छा! शाबाश! एक और वाक्य बनाओ।"
+        
+        RULES:
+        - 'response' field MUST be in Hindi
+        - 'explanation' in corrections MUST be in Hindi 
+        - 'follow_up_question' MUST be in Hindi
+        - 'original' and 'corrected' stay in English"""
+            teacher_desc = "English teacher who ALWAYS explains in Hindi"
+        else:
+            language_instruction = """
+        LANGUAGE STYLE:
+        - Speak in clear, simple English.
+        - Use short sentences appropriate for the student's level."""
+            teacher_desc = "English speaking teacher"
+
+        system_prompt = f"""You are Emma, a warm, encouraging, and highly skilled {teacher_desc}.
         You are having a VOICE CONVERSATION with a student learning English.
+        {language_instruction}
 
         YOUR TEACHING RULES:
         1. CORRECT max 2 grammar/vocabulary mistakes gently. Say the correct version, explain WHY briefly, then continue naturally.
@@ -463,7 +509,7 @@ class OllamaClient:
         3. Give 2-3 EXAMPLES when teaching patterns so students see the rule clearly.
         4. Give HINTS before full answers if student is struggling.
         5. Keep responses SHORT — max 60-80 words total. This is spoken conversation, not an essay.
-        6. Be ENCOURAGING — celebrate small wins like "Great sentence structure!" or "Your vocabulary is growing!"
+        6. Be ENCOURAGING — celebrate small wins.
         7. If this is a repeated mistake, say: "I noticed we've seen this before — let's practice it!"
         8. Adapt language complexity to student level: {state.get("student_level", "beginner")}
 
@@ -502,13 +548,36 @@ class OllamaClient:
         STUDENT JUST SAID: "{student_message}"
 
         RESPOND AS EMMA IN THIS EXACT JSON FORMAT (no markdown, no extra text):
-        {{"response": "<your teaching response, max 80 words>", "corrections": [{{"original": "<what student said wrong>", "corrected": "<correct version>", "error_type": "<from the allowed list>", "explanation": "<brief why>"}}], "follow_up_question": "<always ask a question to keep conversation going>"}}
+        {{"response": "<your teaching response, max 80 words>", "corrections": [{{"original": "<what student said wrong>", "corrected": "<correct version>", "error_type": "<from the allowed list>", "explanation": "<brief why>"}}], "follow_up_question": "<question to keep conversation going>"}}
 
         If the student made no mistakes, use an empty corrections array: "corrections": []
-
+        {self._get_language_example(native_language)}
         JSON ONLY:"""
 
         return prompt, system_prompt
+
+    @staticmethod
+    def _get_language_example(native_language: str) -> str:
+        """
+        Few-shot example return karo — small models ke liye BEST technique.
+
+        Kyun? phi3:mini jaise models instructions se zyada EXAMPLES se seekhte hain.
+        Agar dikhao "Hinglish JSON aisa dikhta hai" toh woh copy karega.
+        """
+        if native_language == "hinglish":
+            return """
+        IMPORTANT: Write response, explanation, follow_up_question in HINGLISH like this example:
+        EXAMPLE (copy this Hinglish style):
+        {"response": "Arre waah, acchi koshish! Dekho, 'I goes' nahi bolte. Jab 'I' ke saath use karte ho toh 'go' lagta hai. Jaise: 'I go to school.' Aur kal ki baat hai toh 'went' use karo: 'I went to school yesterday.' Samjhe?", "corrections": [{"original": "I goes to school", "corrected": "I went to school yesterday", "error_type": "tense_agreement", "explanation": "Dekho, 'yesterday' matlab kal — jo ho chuka hai. Toh past tense 'went' lagega, 'goes' nahi."}], "follow_up_question": "Accha batao, kal school mein kya interesting hua?"}
+        
+        COPY THIS HINGLISH STYLE. Use words like: dekho, samjhe, accha, chalo, matlab, toh, hai, nahi, karo, batao."""
+        elif native_language == "hindi":
+            return """
+        IMPORTANT: Write response, explanation, follow_up_question in HINDI like this example:
+        EXAMPLE (copy this Hindi style):
+        {"response": "बहुत अच्छा प्रयास! देखो, 'I goes' गलत है। 'I' के साथ 'go' लगता है। और कल की बात है तो 'went' use करो: 'I went to school yesterday.' समझे?", "corrections": [{"original": "I goes to school", "corrected": "I went to school yesterday", "error_type": "tense_agreement", "explanation": "देखो, 'yesterday' मतलब कल — जो हो चुका है। तो past tense 'went' लगेगा।"}], "follow_up_question": "अच्छा बताओ, कल school में क्या interesting हुआ?"}"""
+        else:
+            return ""
 
     def build_voice_retry_prompt(self, student_message: str) -> tuple:
         """
