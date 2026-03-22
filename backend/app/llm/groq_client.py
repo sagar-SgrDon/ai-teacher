@@ -150,8 +150,9 @@ class GroqClient(OllamaClient):
             print(f"   🥇 Primary:  {self.model}")
             print(f"   🥈 Fallback: {self.fallback_model}")
 
-    def _call_groq(self, messages, model, temperature=0.7, max_tokens=1024,
-                   json_mode=False):
+    def _call_groq(
+        self, messages, model, temperature=0.7, max_tokens=1024, json_mode=False
+    ):
         """
         Internal method — actual Groq API call.
 
@@ -194,7 +195,7 @@ class GroqClient(OllamaClient):
             kwargs["response_format"] = {"type": "json_object"}
 
         start = time.perf_counter()
-        response = self.client.chat.completions.create(**kwargs)
+        response = self.client.chat.completions.create(**kwargs, timeout=10)
         duration = time.perf_counter() - start
 
         answer = response.choices[0].message.content.strip()
@@ -203,14 +204,14 @@ class GroqClient(OllamaClient):
         usage = response.usage
         model_short = model.split("/")[-1]  # Long model names chhota karo
         print(
-            f"   ⏱️ Groq [{model_short}]: {duration:.1f}s "
-            f"({usage.total_tokens} tokens)"
+            f"   ⏱️ Groq [{model_short}]: {duration:.1f}s ({usage.total_tokens} tokens)"
         )
 
         return answer
 
-    def _call_with_fallback(self, messages, temperature=0.7, max_tokens=1024,
-                            json_mode=False):
+    def _call_with_fallback(
+        self, messages, temperature=0.7, max_tokens=1024, json_mode=False
+    ):
         """
         Smart API call — primary try karo, fail ho toh fallback pe jao.
 
@@ -251,9 +252,19 @@ class GroqClient(OllamaClient):
                 or "resource_exhausted" in error_str
             )
 
-            if is_rate_limit and self._active_model != self.fallback_model:
+            is_timeout_or_slow = (
+                "timeout" in error_str
+                or "timed out" in error_str
+                or "connection" in error_str
+            )
+
+            if (
+                is_rate_limit or is_timeout_or_slow
+            ) and self._active_model != self.fallback_model:
                 # Primary rate-limited → switch to fallback!
-                print(f"   ⚠️ {self._active_model} rate-limited! Switching to fallback...")
+                print(
+                    f"   ⚠️ {self._active_model} rate-limited! Switching to fallback..."
+                )
                 self._active_model = self.fallback_model
                 self._using_fallback = True
 

@@ -1,4 +1,4 @@
-"""
+﻿"""
 ============================================================
 STEP 5: Ollama Client — LLM se Baat Karo
 ============================================================
@@ -114,7 +114,7 @@ class OllamaClient:
             response = requests.post(
                 f"{self.base_url}/api/generate",
                 json=payload,
-                timeout=120,  # 2 minute max wait (phi3:mini thoda slow ho sakta hai)
+                timeout=60,  # 2 minute max wait (phi3:mini thoda slow ho sakta hai)
             )
 
             if response.status_code == 200:
@@ -130,6 +130,7 @@ class OllamaClient:
                 error_msg = f"Ollama error! Status: {response.status_code}"
                 print(f"❌ {error_msg}")
                 return f"Error: {error_msg}"
+            
 
         except requests.ConnectionError:
             error_msg = (
@@ -143,6 +144,15 @@ class OllamaClient:
             print(f"❌ {error_msg}")
             return f"Error: {error_msg}"
 
+        except:
+            return json.dumps(
+                {
+                    "response": "Okay! Tell me more 😊",
+                    "corrections": [],
+                    "follow_up_question": "What do you mean?",
+                }
+            )    
+        
     def generate_stream(
         self, prompt: str, system_prompt: str = None, temperature: float = 0.7
     ):
@@ -504,20 +514,26 @@ class OllamaClient:
         {language_instruction}
 
         YOUR TEACHING RULES:
-        1. CORRECT max 2 grammar/vocabulary mistakes gently. Say the correct version, explain WHY briefly, then continue naturally.
-        2. ALWAYS end with a follow-up question. This is MANDATORY — never just answer and stop.
-        3. Give 2-3 EXAMPLES when teaching patterns so students see the rule clearly.
-        4. Give HINTS before full answers if student is struggling.
-        5. Keep responses SHORT — max 60-80 words total. This is spoken conversation, not an essay.
-        6. Be ENCOURAGING — celebrate small wins.
-        7. If this is a repeated mistake, say: "I noticed we've seen this before — let's practice it!"
-        8. Adapt language complexity to student level: {state.get("student_level", "beginner")}
+        1. Sound like a REAL teacher in a live conversation, not a grammar checker.
+        2. First understand the student's intent and emotion. If the student sounds confused, annoyed, or asks what you mean, clarify gently before teaching anything.
+        3. Correct ONLY when it genuinely helps. Prefer 0 or 1 correction. Use 2 only if both mistakes are critical.
+        4. Do NOT force a correction on every turn. If the student is expressing an idea, respond to the idea first.
+        5. Ask a follow-up question ONLY when it feels natural and useful. It is okay to leave follow_up_question empty.
+        6. Keep responses SHORT — max 60-80 words total. This is spoken conversation, not an essay.
+        7. Be ENCOURAGING and calm. Never sound scolding, repetitive, or robotic.
+        8. If this is a repeated mistake, do a tiny drill naturally, but keep the conversation flowing.
+        9. Adapt language complexity to student level: {state.get("student_level", "beginner")}
+
+        CORRECTION STYLE:
+        - Prefer recasts over lectures. Example: student says something imperfect, you reply naturally with the better version.
+        - Never invent strange English translations just to create a correction.
+        - If the student's sentence is mostly understandable, don't over-correct.
+        - If the student asks a meta question like "what are you saying?" or "teach properly", answer that directly.
 
         RESPONSE RULES:
         - error_type MUST be one of: {error_types_str}
-        - Maximum 2 corrections per response
-        - follow_up_question can NEVER be empty"""
-
+        - Usually 0 or 1 correction, maximum 2
+        - follow_up_question may be empty"""
         # ============================================================
         # USER PROMPT — Sab context + question combine karo
         # ============================================================
@@ -548,9 +564,9 @@ class OllamaClient:
         STUDENT JUST SAID: "{student_message}"
 
         RESPOND AS EMMA IN THIS EXACT JSON FORMAT (no markdown, no extra text):
-        {{"response": "<your teaching response, max 80 words>", "corrections": [{{"original": "<what student said wrong>", "corrected": "<correct version>", "error_type": "<from the allowed list>", "explanation": "<brief why>"}}], "follow_up_question": "<question to keep conversation going>"}}
+        {{"response": "<your teaching response, max 80 words>", "corrections": [{{"original": "<what student said wrong>", "corrected": "<correct version>", "error_type": "<from the allowed list>", "explanation": "<brief why>"}}], "follow_up_question": "<optional natural follow-up or empty string>"}}
 
-        If the student made no mistakes, use an empty corrections array: "corrections": []
+        If the student made no important mistakes, use an empty corrections array: "corrections": []`n        If no natural follow-up is needed, use: "follow_up_question": ""
         {self._get_language_example(native_language)}
         JSON ONLY:"""
 
@@ -566,16 +582,10 @@ class OllamaClient:
         """
         if native_language == "hinglish":
             return """
-        IMPORTANT: Write response, explanation, follow_up_question in HINGLISH like this example:
-        EXAMPLE (copy this Hinglish style):
-        {"response": "Arre waah, acchi koshish! Dekho, 'I goes' nahi bolte. Jab 'I' ke saath use karte ho toh 'go' lagta hai. Jaise: 'I go to school.' Aur kal ki baat hai toh 'went' use karo: 'I went to school yesterday.' Samjhe?", "corrections": [{"original": "I goes to school", "corrected": "I went to school yesterday", "error_type": "tense_agreement", "explanation": "Dekho, 'yesterday' matlab kal — jo ho chuka hai. Toh past tense 'went' lagega, 'goes' nahi."}], "follow_up_question": "Accha batao, kal school mein kya interesting hua?"}
-        
-        COPY THIS HINGLISH STYLE. Use words like: dekho, samjhe, accha, chalo, matlab, toh, hai, nahi, karo, batao."""
+        IMPORTANT: Write response, explanation, follow_up_question in HINGLISH like this example:`n        EXAMPLE (copy this Hinglish style):`n        {"response": "Samajh gaya tum kya kehna chah rahe ho. Natural English mein hum bolenge: 'Delhi is a very crowded city.' Tumhari idea sahi thi, bas sentence ko thoda smooth banana tha.", "corrections": [{"original": "Delhi to bahut bheed bahar wali jagah hai", "corrected": "Delhi is a very crowded city", "error_type": "vocabulary_choice", "explanation": "Meaning same hai, bas English mein isse zyada natural tarike se bolte hain."}], "follow_up_question": "What do you like about Delhi?"}`n`n        Keep the tone natural, warm, and teacher-like. Don't keep repeating filler words like 'dekho' or 'samjhe' in every answer."""
         elif native_language == "hindi":
             return """
-        IMPORTANT: Write response, explanation, follow_up_question in HINDI like this example:
-        EXAMPLE (copy this Hindi style):
-        {"response": "बहुत अच्छा प्रयास! देखो, 'I goes' गलत है। 'I' के साथ 'go' लगता है। और कल की बात है तो 'went' use करो: 'I went to school yesterday.' समझे?", "corrections": [{"original": "I goes to school", "corrected": "I went to school yesterday", "error_type": "tense_agreement", "explanation": "देखो, 'yesterday' मतलब कल — जो हो चुका है। तो past tense 'went' लगेगा।"}], "follow_up_question": "अच्छा बताओ, कल school में क्या interesting हुआ?"}"""
+        IMPORTANT: Write response, explanation, follow_up_question in HINDI like this example:`r`n        EXAMPLE (copy this Hindi style):`r`n        {"response": "मैं समझ गया कि आप क्या कहना चाहते हैं। Natural English में हम कहेंगे: 'Delhi is a very crowded city.' आपकी बात सही थी, बस sentence को थोड़ा smooth बनाना था।", "corrections": [{"original": "Delhi to bahut bheed bahar wali jagah hai", "corrected": "Delhi is a very crowded city", "error_type": "vocabulary_choice", "explanation": "अर्थ वही है, बस English में इसे अधिक natural तरह से बोलते हैं।"}], "follow_up_question": "What do you like about Delhi?"}"""
         else:
             return ""
 

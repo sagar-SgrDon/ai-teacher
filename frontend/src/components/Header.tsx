@@ -6,9 +6,16 @@
  * 
  * Hum yahan Zustand store se directly data le rahe hain —
  * props ki zaroorat nahi! Zustand ka hook use karo, data aa jayega.
+ * 
+ * MODE TOGGLE (naya feature!):
+ * ────────────────────────────
+ * Chat aur Voice ke beech switch karne ka button.
+ * Link use kiya hai (React Router) — SPA navigation!
+ * Page reload nahi hota, sirf component swap hota hai.
  */
 
-import { Monitor, Wifi, WifiOff } from 'lucide-react'
+import { Monitor, Wifi, WifiOff, Mic } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useChatStore } from '@/stores/chatStore'
@@ -32,7 +39,7 @@ export default function Header() {
           </Badge>
         </div>
 
-        {/* Right side — Teacher selector + Verify */}
+        {/* Right side — Teacher selector + Verify + Voice Mode Toggle */}
         <div className="flex items-center gap-2">
           {/* Teacher Toggle Buttons */}
           <Button
@@ -62,6 +69,29 @@ export default function Header() {
             <Monitor className="w-3 h-3" />
             {verify ? '✓ Verify ON' : 'Verify OFF'}
           </Button>
+
+          {/* ── Voice Mode Toggle (NAYA!) ── */}
+          {/*
+           * Divider + Link to Voice Page
+           *
+           * Link vs <a> tag:
+           * <a href="/voice"> = poora page reload (SLOW, state lost!)
+           * <Link to="/voice"> = sirf component swap (FAST, SPA magic!)
+           *
+           * border-l = left side pe vertical line (visual separator)
+           */}
+          <div className="border-l border-border pl-2 ml-1">
+            <Link to="/voice">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300"
+              >
+                <Mic className="w-3 h-3" />
+                🎤 Voice Mode
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </header>
