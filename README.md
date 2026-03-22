@@ -1,18 +1,19 @@
-# 🎓 AI Teacher — Fully Local AI Teaching System
+# 🎓 AI Teacher — AI Teaching System with Voice & Native Language Support
 
-> **Learn English & Crack Coding Interviews — All running on YOUR laptop. No APIs. No cloud. No cost.**
+> **Learn English & Crack Coding Interviews with an AI teacher who speaks YOUR language — Hinglish, Hindi, or English.**
 
-[![LLM](<https://img.shields.io/badge/LLM-phi3:mini_(2.2GB)-blue>)]()
+[![LLM](https://img.shields.io/badge/LLM-Groq_Llama_70B-blue)]()
+[![Fallback](https://img.shields.io/badge/Fallback-Ollama_phi3:mini-gray)]()
+[![TTS](https://img.shields.io/badge/TTS-edge--tts-orange)]()
 [![Vector DB](https://img.shields.io/badge/Vector_DB-ChromaDB-green)]()
 [![Backend](https://img.shields.io/badge/Backend-FastAPI-teal)]()
 [![Frontend](https://img.shields.io/badge/Frontend-React_+_Vite_+_TypeScript-61DAFB)]()
-[![Styling](https://img.shields.io/badge/Styling-Tailwind_v4_+_shadcn/ui-38BDF8)]()
 
 ---
 
 ## 🤔 What is this?
 
-A **100% local AI teacher** with two modes:
+An AI teacher with **dual LLM support** (cloud + local) and two teaching modes:
 
 | 🇬🇧 English Teacher         | 💻 Coding Interview Tutor      |
 | -------------------------- | ------------------------------ |
@@ -21,7 +22,12 @@ A **100% local AI teacher** with two modes:
 | Vocabulary building        | Hints before answers           |
 | Professional email writing | Time/Space complexity analysis |
 
-**Everything runs locally** — zero API calls, zero cost, full privacy.
+**Key features:**
+- ☁️ **Groq cloud LLM** (default) — Llama 70B, blazing fast, excellent Hinglish
+- 💻 **Ollama local** (fallback) — phi3:mini, works offline
+- 🌐 **Native language support** — Emma teaches in Hinglish, Hindi, or English
+- 🎧 **TTS** — Emma speaks! (Microsoft Neural Voices via edge-tts)
+- 🎤 **STT** — Whisper speech-to-text (backend fallback)
 
 ---
 
@@ -30,9 +36,10 @@ A **100% local AI teacher** with two modes:
 ```
 User Question
     → RAG Search (find relevant knowledge from ChromaDB)
-    → LLM Answer (phi3:mini generates response with context)
+    → LLM Answer (Groq/Ollama generates response with context)
     → Verification (same LLM double-checks the answer)
-    → Response to User (with confidence score + sources)
+    → TTS (edge-tts converts response to audio)
+    → Response to User (text + audio + corrections)
 ```
 
 ---
@@ -92,9 +99,9 @@ npm --version     # → should show version number
 
 ---
 
-### 4. Ollama (Local LLM Server)
+### 4. Ollama (Optional — only for offline/local mode)
 
-**What:** Runs AI models (like phi3:mini) locally on your GPU/CPU.
+**What:** Runs AI models locally on your GPU/CPU. Only needed if using `LLM_PROVIDER=ollama`.
 
 | OS          | Install                                                                  |
 | ----------- | ------------------------------------------------------------------------ |
@@ -102,39 +109,29 @@ npm --version     # → should show version number
 | **Mac**     | Download from [ollama.com](https://ollama.com/) or `brew install ollama` |
 | **Linux**   | `curl -fsSL https://ollama.ai/install.sh \| sh`                          |
 
-**After installing — pull the AI model (one-time, ~2.2GB download):**
+**After installing (only if using Ollama):**
 
 ```bash
 ollama pull phi3:mini
 ```
 
-**Verify:** `ollama list` → should show `phi3:mini`
+### 5. Groq API Key (Free — for cloud LLM, default)
 
----
+**What:** Cloud LLM that’s 28x faster than local and speaks excellent Hinglish.
 
-### 5. GPU Driver (Recommended, not required)
-
-**What:** Ollama can run on CPU but it's 5-10x slower. GPU is highly recommended.
-
-| GPU        | Driver                                                                         |
-| ---------- | ------------------------------------------------------------------------------ |
-| **NVIDIA** | Download from [nvidia.com/drivers](https://www.nvidia.com/Download/index.aspx) |
-| **AMD**    | Download from [amd.com/support](https://www.amd.com/en/support)                |
-| **No GPU** | Ollama will auto-fallback to CPU (slower but works)                            |
-
-**Verify (NVIDIA):** `nvidia-smi` → should show your GPU name and driver version
+1. Go to [console.groq.com](https://console.groq.com) → Sign up (free)
+2. Create an API Key
+3. You'll paste this in `.env` file during setup
 
 ---
 
 ## 🚀 Setup — Getting the Project Running
 
 ### Step 1: Clone the Repository
-
 ```bash
 git clone https://github.com/sagar-SgrDon/ai-teacher.git
 cd ai-teacher
 ```
-
 ### Step 2: Backend Setup
 
 ```bash
@@ -153,7 +150,19 @@ source venv/bin/activate          # Mac / Linux
 pip install -r requirements.txt
 ```
 
-### Step 3: Build Vector Database (one-time)
+### Step 3: Environment Setup (🔑 API Keys)
+
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit .env and paste your Groq API key:
+# GROQ_API_KEY=gsk_your_key_here
+```
+
+> 💡 Get your free Groq key at [console.groq.com](https://console.groq.com)
+
+### Step 4: Build Vector Database (one-time)
 
 ```bash
 python backend/scripts/build_vectordb.py
@@ -161,7 +170,7 @@ python backend/scripts/build_vectordb.py
 
 This loads the knowledge base, generates embeddings, and stores them in ChromaDB. Takes ~30 seconds on first run (~80MB model download).
 
-### Step 4: Frontend Setup
+### Step 5: Frontend Setup
 
 ```bash
 cd frontend
@@ -169,26 +178,18 @@ npm install
 cd ..
 ```
 
-### Step 5: Start Everything (3 terminals needed)
+### Step 6: Start Everything (2 terminals)
 
-**Terminal 1 — Ollama (LLM Server):**
-
-```bash
-ollama serve
-```
-
-> If you get "port already in use" error, Ollama is already running. That's fine!
-
-**Terminal 2 — Backend (FastAPI):**
+**Terminal 1 — Backend (FastAPI):**
 
 ```bash
 source venv/Scripts/activate     # Activate venv first
 uvicorn backend.app.main:app --reload --port 8000
 ```
 
-Wait for: `✅ AI Teacher Server ready!`
+Wait for: `✅ AI Teacher Server ready!` and `☁️ Using Groq`
 
-**Terminal 3 — Frontend (React):**
+**Terminal 2 — Frontend (React):**
 
 ```bash
 cd frontend
@@ -197,7 +198,7 @@ npm run dev
 
 Wait for: `➜ Local: http://localhost:5173/`
 
-### Step 6: Open in Browser 🎉
+### Step 7: Open in Browser 🎉
 
 | URL                            | What                                   |
 | ------------------------------ | -------------------------------------- |
@@ -226,17 +227,12 @@ Wait for: `➜ Local: http://localhost:5173/`
 | Technology                 | Purpose                            |
 | -------------------------- | ---------------------------------- |
 | Python FastAPI             | REST API framework                 |
-| Ollama + phi3:mini (2.2GB) | Local LLM inference                |
+| Groq API (Llama 3.3 70B)  | Cloud LLM — fast, excellent Hinglish (default) |
+| Ollama + phi3:mini (2.2GB) | Local LLM — offline fallback       |
+| edge-tts                   | Text-to-Speech (Microsoft Neural Voices) |
+| openai-whisper             | Speech-to-Text (local, base.en)    |
 | ChromaDB                   | Vector database for RAG            |
 | Sentence-Transformers      | Text embeddings (all-MiniLM-L6-v2) |
-| Pydantic                   | Request/response validation        |
-
-### DevOps (Planned)
-
-| Technology       | Purpose          |
-| ---------------- | ---------------- |
-| Docker + Compose | Containerization |
-| GitHub Actions   | CI/CD pipeline   |
 
 ---
 
@@ -246,16 +242,24 @@ Wait for: `➜ Local: http://localhost:5173/`
 ai-teacher/
 ├── backend/
 │   ├── app/
-│   │   ├── config.py              # Centralized settings
+│   │   ├── config.py              # Centralized settings + dotenv
+│   │   ├── main.py                # FastAPI entry point
 │   │   ├── rag/retriever.py       # Semantic search in vector DB
-│   │   ├── llm/ollama_client.py   # Communication with Ollama
+│   │   ├── llm/
+│   │   │   ├── ollama_client.py   # Local LLM + prompt builders
+│   │   │   └── groq_client.py     # Cloud LLM (inherits OllamaClient)
 │   │   ├── verification/verifier.py # Answer double-checking
-│   │   ├── teachers/              # Teacher personalities (coming)
-│   │   └── voice/                 # Whisper + Piper TTS (future)
+│   │   ├── teachers/              # Teacher personalities
+│   │   └── voice/                 # Voice conversation engine
+│   │       ├── conversation_manager.py  # State machine + tracking
+│   │       ├── voice_router.py      # API endpoints
+│   │       ├── tts_service.py       # Text-to-Speech (edge-tts)
+│   │       └── stt_service.py       # Speech-to-Text (Whisper)
 │   ├── data/kb/                   # Knowledge base (JSON)
-│   ├── chroma_db/                 # Vector database (auto-generated)
 │   └── scripts/                   # Setup & utility scripts
-├── frontend/                      # Chat UI (coming)
+├── frontend/                      # React + Vite + TypeScript
+├── .env.example                   # Environment template (commit this)
+├── .env                           # Your secrets (gitignored!)
 └── requirements.txt
 ```
 
@@ -265,8 +269,8 @@ ai-teacher/
 
 ### Prerequisites
 
-- **Python 3.10 – 3.12** (⚠️ Python 3.13+ is NOT supported — ChromaDB depends on Pydantic v1 which is incompatible with 3.13+)
-- [Ollama](https://ollama.com/) installed
+- **Python 3.10 – 3.12** (⚠️ Python 3.13+ NOT supported — ChromaDB/Pydantic v1)
+- **Groq API key** (free at [console.groq.com](https://console.groq.com))
 - Git
 
 ### Setup
@@ -277,25 +281,21 @@ git clone https://github.com/sagar-SgrDon/ai-teacher.git
 cd ai-teacher
 
 # 2. Create virtual environment (use Python 3.12)
-py -3.12 -m venv venv          # Windows (install 3.12 first if needed: py install 3.12)
-# OR: python3.12 -m venv venv  # macOS/Linux
+py -3.12 -m venv venv          # Windows
 source venv/Scripts/activate   # Windows Git Bash
-# OR: venv\Scripts\activate    # Windows CMD
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Pull the LLM model (one-time, ~4.4GB download)
-ollama pull phi3:mini
+# 4. Setup environment
+cp .env.example .env
+# Edit .env → paste your GROQ_API_KEY
 
-# 5. Start Ollama server (keep running in separate terminal)
-ollama serve
-
-# 6. Test Ollama connection
-python backend/scripts/test_ollama.py
-
-# 7. Build vector database (one-time)
+# 5. Build vector database (one-time)
 python backend/scripts/build_vectordb.py
+
+# 6. Start server
+uvicorn backend.app.main:app --reload --port 8000
 ```
 
 ---
@@ -322,12 +322,12 @@ Every file has detailed Hinglish comments explaining **what**, **why**, and **ho
 
 Tested on GTX 1650, 16GB RAM:
 
-| Operation                  | Time    |
-| -------------------------- | ------- |
-| RAG Search                 | ~0.5s   |
-| LLM Response (no verify)   | ~30-50s |
-| LLM Response (with verify) | ~60-90s |
-| Server startup             | ~10s    |
+| Operation               | Groq (Cloud) | Ollama (Local) |
+| ----------------------- | ------------ | -------------- |
+| Voice LLM (JSON mode)   | **~0.7s**    | ~15-20s        |
+| TTS (edge-tts)          | ~5s          | ~5s            |
+| Voice total (end-to-end)| **~6s**      | ~25-35s        |
+| RAG Search              | ~0.5s        | ~0.5s          |
 
 ---
 
@@ -346,14 +346,15 @@ Tested on GTX 1650, 16GB RAM:
 
 | Problem                              | Solution                                                                            |
 | ------------------------------------ | ----------------------------------------------------------------------------------- |
+| `GROQ_API_KEY` not set               | Edit `.env` file and paste your key from [console.groq.com](https://console.groq.com) |
 | `ollama serve` → port already in use | Ollama is already running — ignore this error                                       |
 | `python` command not found           | Use `py -3.12` or `python3` or reinstall Python with "Add to PATH" checked          |
 | ChromaDB Pydantic error on startup   | You're on Python 3.13+. Recreate venv with 3.12: `py -3.12 -m venv venv`            |
 | ChromaDB `PanicException` on startup | Delete `backend/chroma_db/` and rebuild: `python backend/scripts/build_vectordb.py` |
 | `npm` command not found              | Install Node.js from [nodejs.org](https://nodejs.org/)                              |
 | Frontend can't connect to backend    | Make sure backend is running on port 8000                                           |
-| Very slow responses (>2 min)         | Check if Ollama is using GPU: `ollama ps`                                           |
-| `ERESOLVE` npm errors                | Delete `node_modules` + `package-lock.json`, then `npm install`                     |
+| Very slow responses (>10 sec)        | Switch to Groq (set `LLM_PROVIDER=groq` in `.env`)                                 |
+| Emma speaks in English not Hinglish  | Use Groq, not Ollama — phi3:mini can't do Hinglish well                             |
 
 ---
 

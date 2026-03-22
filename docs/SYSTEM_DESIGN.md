@@ -1,12 +1,15 @@
 # 🎓 AI Teacher — System Design Document
 
-> A fully local, privacy-first AI teaching system built for learning. No APIs. No cloud. Your laptop is the classroom.
+> A privacy-first AI teaching system with dual LLM support (local + cloud), voice I/O, and native language support.
 
 | Spec           | Value                        |
 | -------------- | ---------------------------- |
 | **Python**     | 3.10 – 3.12 (⚠️ 3.13+ not supported) |
 | **Hardware**   | GTX 1650 GPU, 16GB RAM       |
-| **LLM**        | phi3:mini via Ollama (local) |
+| **LLM (Cloud)**| Groq API → Llama 3.3 70B (default, free) |
+| **LLM (Local)**| Ollama → phi3:mini (offline fallback) |
+| **TTS**        | edge-tts (Microsoft Neural Voices) |
+| **STT**        | OpenAI Whisper (local, base.en) |
 | **Vector DB**  | ChromaDB (local, persistent) |
 | **Embeddings** | all-MiniLM-L6-v2 (384-dim)   |
 | **Backend**    | Python FastAPI               |
@@ -37,11 +40,13 @@ graph TB
         CM[Conversation Manager<br/>State Machine]
         LP[LLM Parser<br/>JSON Validation]
         VL[Voice Logger<br/>JSONL]
+        TTS[TTS Service<br/>edge-tts]
+        STT[STT Service<br/>Whisper]
     end
 
     subgraph Core["🧠 Core Pipeline"]
         RAG[RAG Retriever]
-        LLM[Ollama Client<br/>+ Voice Methods]
+        LLM[LLM Client<br/>Groq or Ollama]
         VER[Answer Verifier]
     end
 
@@ -53,8 +58,9 @@ graph TB
     end
 
     subgraph Infra["🔧 Infrastructure"]
+        GROQ[Groq Cloud API<br/>Llama 3.3 70B]
         OLL[Ollama Server<br/>localhost:11434]
-        PHI[phi3:mini Model<br/>2.2 GB]
+        MSFT[Microsoft Edge TTS<br/>Neural Voices]
     end
 
     UI -->|HTTP POST /ask| API
@@ -65,15 +71,19 @@ graph TB
     VR --> CM & LP & VL
     VR --> RAG
     VR --> LLM
+    VR --> TTS
     RAG --> VDB
     VDB --> EMB
     RAG -->|context| LLM
     LLM -->|answer| VER
     VER -->|verified answer| API
     LP -->|parsed response| VR
-    VR -->|JSON response| VAPI
+    TTS -->|audio MP3| VR
+    VR -->|JSON + audio_url| VAPI
     API -->|JSON response| UI
-    LLM --> OLL --> PHI
+    LLM --> GROQ
+    LLM -.->|fallback| OLL
+    TTS --> MSFT
     KB -.->|build_vectordb.py| VDB
     VL -.->|append| LOGS
 ```
@@ -162,37 +172,34 @@ context = retriever.format_context(results)
 
 ---
 
-### 3.2 Ollama Client — `backend/app/llm/ollama_client.py`
+### 3.2 LLM Clients — Dual Provider Architecture
 
-**One-line:** Sends prompts to phi3:mini through Ollama's local REST API, gets answers back.
+**One-line:** Switchable LLM backend — Groq (cloud, fast, better Hinglish) or Ollama (local, offline fallback).
 
 ```
-[System Prompt + Prompt + Temperature] → Ollama API → phi3:mini → Answer Text
+Config: LLM_PROVIDER = "groq" | "ollama"
+
+[Groq path]:   Prompt → Groq API → Llama 3.3 70B → JSON Response  (2-5 sec)
+[Ollama path]: Prompt → Ollama API → phi3:mini → JSON Response     (15-20 sec)
 ```
 
-**Two modes of operation:**
+**Files:**
 
-| Mode | Method | Output | Timeout | Use Case |
-|------|--------|--------|---------|----------|
-| **Text Chat** | `generate()` | Free text | 120s | `/ask` endpoint |
-| **Voice Chat** | `generate_voice_response()` | Forced JSON | 60s | `/voice/talk/text` |
+| File | Class | API | Best For |
+|------|-------|-----|----------|
+| `ollama_client.py` | `OllamaClient` | Ollama REST API | Offline mode, English |
+| `groq_client.py` | `GroqClient` (inherits OllamaClient) | Groq OpenAI-compatible API | Hinglish, Hindi, speed |
 
-**Voice-specific methods:**
+**Inheritance pattern:** `GroqClient` inherits prompt-building methods from `OllamaClient`, only overrides `generate()` and `generate_voice_response()` — same prompts, different API.
+
+**Voice-specific methods (shared via inheritance):**
 
 | Method | Purpose |
 |--------|---------|
-| `generate_voice_response()` | JSON-mode LLM call with 60s timeout + fallback |
-| `build_voice_conversation_prompt()` | Emma teacher's system prompt + conversation state + RAG context |
+| `generate_voice_response()` | JSON-mode LLM call with timeout + fallback |
+| `build_voice_conversation_prompt()` | Emma's system prompt + language instructions + state + RAG |
 | `build_voice_retry_prompt()` | Stricter prompt for retry when JSON parse fails |
-
-**Prompt Engineering — the most underrated skill:**
-
-```
-❌ BAD PROMPT:   "Two Sum bata"
-✅ GOOD PROMPT:  System: "You are a coding tutor."
-                 User: "Using this reference: [RAG context]
-                        Explain Two Sum step by step"
-```
+| `_get_language_example()` | Few-shot Hinglish/Hindi examples (helps smaller models) |
 
 **Temperature explained:**
 
@@ -257,30 +264,25 @@ result = teacher.ask(question)        # same interface!
 | `GET` | `/health` | Check if server + Ollama are running | None |
 | `POST` | `/ask` | Ask a question to a teacher | `{question, teacher_type, verify}` |
 | `POST` | `/ask/stream` | Streaming response (SSE) | `{question, teacher_type, verify}` |
-| `POST` | `/voice/start` | Start a new voice session | `{student_level}` |
+| `POST` | `/voice/start` | Start a new voice session | `{student_level, native_language}` |
 | `POST` | `/voice/talk/text` | **Core** — text conversation with Emma | `{session_id, text}` |
+| `GET` | `/voice/audio/{filename}` | Serve TTS audio file (MP3) | Path param |
 | `GET` | `/voice/history/{id}` | Get conversation history | Path param |
 | `GET` | `/voice/corrections/{id}` | Get correction report card | Path param |
-
-**Key concepts used:**
-
-- **Pydantic BaseModel** — validates request/response format automatically
-- **CORS Middleware** — allows frontend (different port) to talk to backend
-- **Startup Event** — loads models once at server start, not per-request
-- **HTTPException** — proper error responses with status codes
-- **APIRouter** — groups voice endpoints under `/voice/` prefix
 
 **Startup flow:**
 
 ```
 Server starts → Load RAGRetriever (embedding model + ChromaDB)
-             → Load OllamaClient (connect to Ollama)
-             → Load AnswerVerifier (uses OllamaClient)
-             → Create EnglishTeacher (gets all 3 components)
-             → Create CodingTeacher (gets all 3 components)
-             → Init VoiceRouter (connect retriever + llm_client)
+             → Check LLM_PROVIDER config
+             → "groq"  → Load GroqClient (cloud, Llama 70B)
+             → "ollama" → Load OllamaClient (local, phi3:mini)
+             → Load AnswerVerifier (uses whichever LLM client)
+             → Create EnglishTeacher + CodingTeacher
+             → Init TTSService (edge-tts, voice config)
+             → Init VoiceRouter (retriever + llm_client + tts_service)
              → Mount voice router at /voice/*
-             → Ready to serve requests!
+             → Ready!
 ```
 
 ---
@@ -312,7 +314,7 @@ sequenceDiagram
     LP-->>VR: ParsedTeacherResponse
     VR->>CM: track_correction() + update_state()
     VR->>VL: log_turn() → JSONL file
-    VR-->>Student: {response, corrections, follow_up}
+    VR-->>Student: {response, corrections, follow_up, audio_url}
 ```
 
 **Component breakdown:**
@@ -322,8 +324,61 @@ sequenceDiagram
 | `conversation_manager.py` | `ConversationManager`, `ConversationSession`, `ConversationState` | Session state machine, error tracking, debouncing, level adjustment |
 | `llm_parser.py` | `parse_llm_response_with_retry()`, `normalize_text()` | JSON parse chain (direct → regex → retry → fallback), strict enum validation |
 | `logger.py` | `VoiceLogger` | JSONL structured logging per session with latency tracking |
-| `voice_router.py` | FastAPI `APIRouter` with 4 endpoints | Orchestrator — ties all components together |
-| `ollama_client.py` | `generate_voice_response()`, `build_voice_conversation_prompt()` | JSON-mode LLM calls + Emma's system prompt |
+| `voice_router.py` | FastAPI `APIRouter` with 5 endpoints | Orchestrator — ties all components together |
+| `tts_service.py` | `TTSService` | Text-to-Speech via edge-tts (Microsoft Neural Voices) |
+| `stt_service.py` | `STTService` | Speech-to-Text via Whisper (local, base.en model) |
+| `ollama_client.py` | Prompt building + Ollama API calls | Base LLM client (inherited by GroqClient) |
+| `groq_client.py` | `GroqClient(OllamaClient)` | Cloud LLM via Groq API (inherits prompts) |
+
+### 3.7 Voice I/O — TTS & STT
+
+**TTS (Text-to-Speech) — `voice/tts_service.py`:**
+
+```
+Emma's text → edge-tts (Microsoft) → MP3 audio → Serve via /voice/audio/{file}
+```
+
+| Feature | Detail |
+|---------|--------|
+| Library | edge-tts (free, no API key) |
+| Voices | Jenny (English), Neerja (Indian English/Hinglish), Swara (Hindi) |
+| Speed | +5% (natural conversational pace) |
+| Output | MP3, temp files with auto-cleanup |
+| Backup | 3 fallback voices if primary fails |
+
+**STT (Speech-to-Text) — `voice/stt_service.py`:**
+
+```
+Student audio → Whisper (local) → Transcribed text → LLM pipeline
+```
+
+| Feature | Detail |
+|---------|--------|
+| Library | openai-whisper (local, no API) |
+| Model | base.en (~140MB, English-only) |
+| Max audio | 20 seconds, 5MB |
+| Primary | Frontend Web Speech API (lower latency) |
+| Whisper | Backend fallback when browser STT unavailable |
+
+### 3.8 Native Language Support
+
+**Emma adapts her language based on `native_language`:**
+
+| Language | Teaching Style | TTS Voice | LLM Quality |
+|----------|---------------|-----------|-------------|
+| `english` | Pure English explanations | en-US-JennyNeural | ⭐⭐⭐⭐⭐ |
+| `hinglish` | Hindi-English mix explanations | en-IN-NeerjaNeural | ⭐⭐⭐⭐⭐ (Groq) / ⭐⭐ (Ollama) |
+| `hindi` | Hindi explanations, English grammar terms | hi-IN-SwaraNeural | ⭐⭐⭐⭐ (Groq) |
+
+**How it works:**
+
+```
+Session start (native_language="hinglish")
+  → System prompt adds CRITICAL language rules
+  → Few-shot Hinglish JSON example injected in prompt
+  → TTS voice switched to Indian English (NeerjaNeural)
+  → Greeting in Hinglish: "Hi! Main Emma hoon, chalo practice shuru karte hain!"
+```
 
 **Error tracking & adaptive learning:**
 
@@ -335,25 +390,6 @@ Student makes mistake → Correction tracked (with ErrorType enum)
                       → Student level auto-adjusts (beginner/intermediate/advanced)
 ```
 
-**ErrorType enum (12 categories):**
-
-`tense_agreement` · `article_usage` · `preposition` · `subject_verb_agreement` · `word_order` · `pluralization` · `pronoun_usage` · `vocabulary_choice` · `spelling` · `punctuation` · `sentence_structure` · `other`
-
-**Correction schema (enforced via strict validation):**
-
-```json
-{
-  "response": "Yesterday is past tense. Use 'went' for past actions.",
-  "corrections": [{
-    "original": "I goes to school yesterday",
-    "corrected": "I went to school yesterday",
-    "error_type": "tense_agreement",
-    "explanation": "Use 'went' for past actions."
-  }],
-  "follow_up_question": "Can you form another sentence in past tense?"
-}
-```
-
 **Safety guardrails:**
 
 | Guardrail | What | Why |
@@ -362,7 +398,6 @@ Student makes mistake → Correction tracked (with ErrorType enum)
 | Correction debouncing | Skip if same error corrected last turn | Avoid repetitive feedback |
 | 80-word response cap | Truncate at sentence boundary | Voice output must be concise |
 | Grammar drill loop guard | Max 3 turns in drill mode | Prevent getting stuck |
-| Empty/silence handling | Fallback prompt if no input | Never crash on empty |
 | 60s LLM timeout | Return fallback JSON | Student shouldn't wait forever |
 | JSON retry | Stricter prompt on parse failure | LLMs sometimes break format |
 | Strict enum validation | Reject unknown error_type | Protect tracking integrity |
@@ -375,25 +410,8 @@ Student makes mistake → Correction tracked (with ErrorType enum)
 
 | Collection | Items | Categories                                                                                       |
 | ---------- | ----- | ------------------------------------------------------------------------------------------------ |
-| English    | 14    | Grammar (7), Vocabulary (3), Conversation (3), Writing (1)                                       |
+| English    | 41    | Grammar (12), Vocabulary (5), Conversation (5), Writing (2), Pronunciation (6), Company Scenarios (6), Speaking Scenarios (5) |
 | Coding     | 14    | Arrays (3), Strings (2), Linked List (2), Stack (1), Trees (2), DP (2), Search (1), Hash Map (1) |
-
-### Coding Knowledge Item Schema
-
-```json
-{
-  "id": "dsa_array_001",
-  "topic": "Arrays - Two Sum",
-  "category": "arrays",
-  "difficulty": "easy",
-  "question": "Given an array...",
-  "hints": ["Hint 1", "Hint 2"],
-  "solution": "def two_sum(nums, target): ...",
-  "explanation": "We use a hash map...",
-  "time_complexity": "O(n)",
-  "space_complexity": "O(n)"
-}
-```
 
 ---
 
@@ -406,8 +424,10 @@ ai-teacher/
 │   │   ├── config.py                 # All settings in one place
 │   │   ├── main.py                   # FastAPI app — entry point
 │   │   ├── rag/retriever.py          # Semantic search
-│   │   ├── llm/ollama_client.py      # Talk to phi3:mini
 │   │   ├── verification/verifier.py  # Double-check answers
+│   │   ├── llm/                      # 🧠 LLM Clients
+│   │   │   ├── ollama_client.py      # Local LLM (phi3:mini) + prompt builders
+│   │   │   └── groq_client.py        # Cloud LLM (Llama 70B, inherits OllamaClient)
 │   │   ├── teachers/
 │   │   │   ├── english_teacher.py    # English teacher personality
 │   │   │   └── coding_teacher.py     # Coding teacher personality
@@ -417,7 +437,9 @@ ai-teacher/
 │   │       ├── conversation_manager.py  # State machine + error tracking
 │   │       ├── llm_parser.py            # JSON parse + validate + retry
 │   │       ├── logger.py                # JSONL structured logging
-│   │       └── voice_router.py          # API endpoints (the orchestrator)
+│   │       ├── voice_router.py          # API endpoints (the orchestrator)
+│   │       ├── tts_service.py           # Text-to-Speech (edge-tts)
+│   │       └── stt_service.py           # Speech-to-Text (Whisper)
 │   ├── data/kb/                      # Knowledge base JSONs
 │   ├── chroma_db/                    # Vector database (auto-generated)
 │   ├── logs/voice_sessions/          # Session logs (JSONL, gitignored)
@@ -466,29 +488,18 @@ ai-teacher/
 | -------------------------- | ---------------------------------- |
 | Python 3.10–3.12           | ⚠️ 3.13+ breaks ChromaDB (Pydantic v1 incompatibility) |
 | Python FastAPI             | REST API framework                 |
-| Ollama + phi3:mini (2.2GB) | Local LLM inference (+ JSON mode for voice) |
+| Groq API (Llama 3.3 70B)  | Cloud LLM — fast, excellent Hinglish (default) |
+| Ollama + phi3:mini (2.2GB) | Local LLM — offline fallback |
+| edge-tts                   | Text-to-Speech (Microsoft Neural Voices) |
+| openai-whisper             | Speech-to-Text (local, base.en model) |
 | ChromaDB                   | Vector database for RAG            |
 | Sentence-Transformers      | Text embeddings (all-MiniLM-L6-v2) |
 | Pydantic                   | Request/response validation        |
-| Pytest                     | Backend unit testing               |
-
-### DevOps & Infrastructure
-
-| Technology          | Purpose                                           | Cost                  |
-| ------------------- | ------------------------------------------------- | --------------------- |
-| Docker + Compose    | Containerization — consistent env across machines | Free                  |
-| GitHub Actions      | CI/CD — auto test + lint on every push            | Free (2000 min/month) |
-| Husky + lint-staged | Pre-commit hooks — check code before commit       | Free                  |
-| ESLint + Prettier   | Code quality + auto-formatting                    | Free                  |
-| Vercel              | Frontend hosting (production)                     | Free tier             |
-| Railway / Render    | Backend hosting (production)                      | Free tier             |
 
 ### Future Additions
 
 | Technology        | Purpose             | Status |
 | ----------------- | ------------------- | ------ |
-| edge-tts          | Text-to-speech (streaming) | 🔜 Next |
-| Whisper           | Speech-to-text      | 🔜 Next |
 | React Three Fiber | 3D avatar rendering | 🔲 Future |
 | Ready Player Me   | Avatar generator    | 🔲 Future |
 | Rhubarb Lip Sync  | Avatar lip syncing  | 🔲 Future |
@@ -543,7 +554,7 @@ Deploy (CD) — on main branch
 | Phase             | Step                  | Status     | Tech                           |
 | ----------------- | --------------------- | ---------- | ------------------------------ |
 | **Foundation**    | 1. Ollama test        | ✅ Done    | `scripts/test_ollama.py`       |
-|                   | 2. Knowledge Base     | ✅ Done    | `data/kb/*.json`               |
+|                   | 2. Knowledge Base     | ✅ Done    | `data/kb/*.json` (41 items)    |
 |                   | 3. Vector DB          | ✅ Done    | `scripts/build_vectordb.py`    |
 | **Core Pipeline** | 4. RAG Retriever      | ✅ Done    | `app/rag/retriever.py`         |
 |                   | 5. LLM Client         | ✅ Done    | `app/llm/ollama_client.py`     |
@@ -556,70 +567,194 @@ Deploy (CD) — on main branch
 |                   | 12. Voice Prompts     | ✅ Done    | `llm/ollama_client.py` (voice methods) |
 |                   | 13. Voice Router      | ✅ Done    | `voice/voice_router.py`        |
 |                   | 14. Text endpoint     | ✅ Tested  | `/voice/talk/text` working     |
-| **Frontend**      | 15. React+Vite setup  | ✅ Done    | TypeScript template            |
-|                   | 16. Tailwind + shadcn | ✅ Done    | Tailwind v4, shadcn Nova       |
-|                   | 17. Chat UI           | ✅ Done    | Components + Zustand + API     |
-|                   | 18. Voice Chat UI     | 🔲 Planned | Mic button + waveform          |
-|                   | 19. Topics UI         | 🔲 Planned | Udemy-style course view        |
-| **Voice I/O**     | 20. STT (Whisper)     | 🔲 Next    | Speech-to-text                 |
-|                   | 21. TTS (edge-tts)    | 🔲 Next    | Text-to-speech streaming       |
-|                   | 22. Full voice flow   | 🔲 Next    | `/voice/talk` endpoint         |
-| **DevOps**        | 23. Docker            | 🔲 Planned | Containerization               |
-|                   | 24. GitHub Actions    | 🔲 Planned | CI/CD pipeline                 |
-| **Avatar**        | 25. 3D Avatar         | 🔲 Future  | React Three Fiber              |
+| **Voice I/O**     | 15. TTS (edge-tts)    | ✅ Done    | `voice/tts_service.py`         |
+|                   | 16. STT (Whisper)     | ✅ Done    | `voice/stt_service.py`         |
+|                   | 17. Groq Integration  | ✅ Done    | `llm/groq_client.py`           |
+|                   | 18. Native Language   | ✅ Tested  | Hinglish + Hindi support       |
+|                   | 19. Audio serving     | ✅ Tested  | `/voice/audio/{file}` endpoint |
+| **Frontend**      | 20. React+Vite setup  | ✅ Done    | TypeScript template            |
+|                   | 21. Tailwind + shadcn | ✅ Done    | Tailwind v4, shadcn Nova       |
+|                   | 22. Chat UI           | ✅ Done    | Components + Zustand + API     |
+|                   | 23. Voice Chat UI     | 🔲 Planned | Mic button + waveform          |
+|                   | 24. Topics UI         | 🔲 Planned | Udemy-style course view        |
+| **DevOps**        | 25. Docker            | 🔲 Planned | Containerization               |
+|                   | 26. GitHub Actions    | 🔲 Planned | CI/CD pipeline                 |
+| **Avatar**        | 27. 3D Avatar         | 🔲 Future  | React Three Fiber              |
 
 ---
 
 ## 10. Performance Benchmarks
 
-Tested on GTX 1650, 16GB RAM, phi3:mini (2.2GB):
+### Groq (Cloud) — Default
 
-| Operation                      | Time   | Notes                                   |
-| ------------------------------ | ------ | --------------------------------------- |
-| RAG Search                     | ~0.5s  | Embedding model cached after first load |
-| LLM Generation (no verify)     | ~30s   | Single inference pass                   |
-| LLM Generation (with verify)   | ~60s   | Two inference passes                    |
-| **Voice LLM (JSON mode)**      | **~7s**  | **JSON-forced output, 512 max tokens** |
-| **Voice total (end-to-end)**   | **~21s** | **RAG + LLM + parse + state update**   |
-| Server startup                 | ~10s   | Model loading + ChromaDB connection     |
-| Embedding model first download | ~10s   | 80MB, cached after first run            |
+| Operation                      | Time     | Notes                                   |
+| ------------------------------ | -------- | --------------------------------------- |
+| RAG Search                     | ~0.5s    | Embedding model cached after first load |
+| **Voice LLM (Groq JSON)**      | **~0.7s** | **Llama 70B, JSON-forced, 512 tokens** |
+| **TTS (edge-tts)**             | **~5s**   | **Microsoft Neural Voice, MP3** |
+| **Voice total (end-to-end)**   | **~6s**  | **RAG + LLM + TTS + parse**   |
+| Server startup                 | ~10s     | ChromaDB + embedding model |
+
+### Ollama (Local) — Fallback
+
+| Operation                      | Time     | Notes                                   |
+| ------------------------------ | -------- | --------------------------------------- |
+| LLM Generation (no verify)     | ~30s     | phi3:mini, single pass |
+| **Voice LLM (JSON mode)**      | **~15-20s** | **phi3:mini, 512 max tokens** |
+| **Voice total (end-to-end)**   | **~25-35s** | **RAG + LLM + TTS + parse** |
+
+### Speed Comparison: Groq vs Ollama
+
+```
+                LLM Speed          Total (with TTS)
+Groq:    ████░░░░░░ 0.7s     ██████░░░░ 6.3s
+Ollama:  █████████████████████ 19.6s   ████████████████████████████████████ 35.6s
+                                        28x faster with Groq! 🚀
+```
 
 ---
 
 ## 11. Quick Reference Commands
 
 ```bash
-# ── Backend ──
-ollama serve                                          # Start LLM server
+# ── Setup ──
+ollama serve                                          # Start Ollama (only if using local LLM)
 source venv/Scripts/activate                          # Activate Python env
+pip install -r requirements.txt                       # Install dependencies
 python backend/scripts/build_vectordb.py              # Build vector DB
-uvicorn backend.app.main:app --reload --port 8000     # Start API server
+
+# ── Environment (.env file) ──
+cp .env.example .env                                  # Copy template
+# Edit .env → paste your Groq API key (get from console.groq.com)
+
+# ── Start Server ──
+# Groq (default — reads GROQ_API_KEY from .env):
+uvicorn backend.app.main:app --reload --port 8000
+
+# Ollama (offline — set LLM_PROVIDER=ollama in .env):
+uvicorn backend.app.main:app --reload --port 8000
 
 # ── Frontend ──
 cd frontend && npm run dev                            # Start React dev server
 npm run build                                         # Production build → dist/
-
-# ── Voice Endpoints ──
-curl http://localhost:8000/voice/start -X POST -H "Content-Type: application/json" -d '{"student_level": "beginner"}'
-curl http://localhost:8000/voice/talk/text -X POST -H "Content-Type: application/json" -d '{"session_id": "SESSION_ID", "text": "I goes to school yesterday"}'
-curl http://localhost:8000/voice/corrections/SESSION_ID
-curl http://localhost:8000/voice/history/SESSION_ID
-
-# ── Test URLs ──
-# Backend Health:  http://localhost:8000/health
-# Backend Swagger: http://localhost:8000/docs
-# Frontend:        http://localhost:5173
 ```
 
 ---
 
-## 12. Bugs Found & Fixed
+## 12. API Testing — curl Commands
+
+### Health Check
+
+```bash
+curl http://localhost:8000/health
+```
+
+### Text Chat (Ask Endpoint)
+
+```bash
+# English teacher
+curl -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -d "{\"question\": \"How do I use past tense?\", \"teacher_type\": \"english\"}"
+
+# Coding teacher
+curl -X POST http://localhost:8000/ask \
+  -H "Content-Type: application/json" \
+  -d "{\"question\": \"Explain Two Sum\", \"teacher_type\": \"coding\"}"
+```
+
+### Voice Session — Start
+
+```bash
+# English mode
+curl -X POST http://localhost:8000/voice/start \
+  -H "Content-Type: application/json" \
+  -d "{\"student_level\": \"beginner\"}"
+
+# Hinglish mode
+curl -X POST http://localhost:8000/voice/start \
+  -H "Content-Type: application/json" \
+  -d "{\"student_level\": \"beginner\", \"native_language\": \"hinglish\"}"
+
+# Hindi mode
+curl -X POST http://localhost:8000/voice/start \
+  -H "Content-Type: application/json" \
+  -d "{\"student_level\": \"beginner\", \"native_language\": \"hindi\"}"
+```
+
+### Voice Session — Talk (Text Input)
+
+```bash
+# Replace SESSION_ID with actual session_id from /voice/start response
+curl -X POST http://localhost:8000/voice/talk/text \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\": \"SESSION_ID\", \"text\": \"I goes to school yesterday\"}"
+
+# Another test sentence
+curl -X POST http://localhost:8000/voice/talk/text \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\": \"SESSION_ID\", \"text\": \"She don't like pizza\"}"
+```
+
+### Voice Session — Audio Playback
+
+```bash
+# Download Emma's audio response (filename from audio_url in talk response)
+curl http://localhost:8000/voice/audio/emma_XXXXXX.mp3 --output emma_response.mp3
+```
+
+### Voice Session — History & Corrections
+
+```bash
+# Get conversation history
+curl http://localhost:8000/voice/history/SESSION_ID
+
+# Get correction report card
+curl http://localhost:8000/voice/corrections/SESSION_ID
+```
+
+### Full Test Flow (Copy-Paste Ready)
+
+```bash
+# Step 1: Start a Hinglish session
+curl -X POST http://localhost:8000/voice/start \
+  -H "Content-Type: application/json" \
+  -d "{\"student_level\": \"beginner\", \"native_language\": \"hinglish\"}"
+# → Copy session_id from response
+
+# Step 2: Talk with a grammatically incorrect sentence
+curl -X POST http://localhost:8000/voice/talk/text \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\": \"PASTE_SESSION_ID\", \"text\": \"I goes to school yesterday\"}"
+# → Check teacher_response (should be Hinglish), corrections, audio_url
+
+# Step 3: Download and play audio
+curl http://localhost:8000/voice/audio/PASTE_AUDIO_FILENAME --output emma.mp3
+# → Play emma.mp3 to hear Emma speak in Hinglish!
+
+# Step 4: Check corrections report
+curl http://localhost:8000/voice/corrections/PASTE_SESSION_ID
+```
+
+### Test URLs (Browser)
+
+```
+Backend Health:  http://localhost:8000/health
+Backend Swagger: http://localhost:8000/docs
+Frontend:        http://localhost:5173
+```
+
+---
+
+## 13. Bugs Found & Fixed
 
 | Bug                                   | Where                                     | Fix                                     | Lesson                                       |
 | ------------------------------------- | ----------------------------------------- | --------------------------------------- | -------------------------------------------- |
 | `is_verified: true` when verify=false | `english_teacher.py`, `coding_teacher.py` | Changed default to `is_verified: False` | Default values must reflect actual state     |
 | `coding_tutor` variable not found     | `main.py`                                 | Renamed to `coding_teacher`             | Always rename in ALL places when refactoring |
+| Emma replies in English not Hinglish  | `ollama_client.py`                        | Added few-shot examples + stronger CRITICAL instructions | Small models need examples, not just instructions |
+| phi3:mini broken Hinglish             | Model limitation                          | Switched to Groq (Llama 70B) as default | 3.8B params insufficient for code-switching  |
 
 ---
 
-_This document is updated as the project progresses. Last updated: Step 14 — Voice Conversation Engine complete, `/voice/talk/text` endpoint tested & working._
+_Last updated: Voice I/O complete (TTS + STT), Groq cloud LLM integrated, native language support (Hinglish/Hindi) tested & working._
