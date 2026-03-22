@@ -9,3 +9,5 @@ pydantic-settings==2.10.1
 langchain-text-splitters==0.3.9
 openai-whisper==20250625
 edge-tts==7.2.7
+groq==0.25.0
+python-dotenv==1.1.0

@@ -54,11 +54,13 @@ import json
 # Apne modules import karo
 from .rag.retriever import RAGRetriever
 from .llm.ollama_client import OllamaClient
+from .llm.groq_client import GroqClient
 from .verification.verifier import AnswerVerifier
 from .teachers.english_teacher import EnglishTeacher
 from .teachers.coding_teacher import CodingTeacher
 from .voice.voice_router import router as voice_router, init_voice_components
 from .voice.tts_service import TTSService
+from .config import LLM_PROVIDER
 
 
 # ============================================================
@@ -160,7 +162,15 @@ async def startup():
     # Step 1: Core components load karo
     print("\n📦 Loading components...")
     retriever = RAGRetriever()
-    llm_client = OllamaClient()
+
+    # LLM client choose karo — Groq (cloud) ya Ollama (local)
+    if LLM_PROVIDER == "groq" and GroqClient.is_available():
+        print("   ☁️ Using Groq (cloud LLM — better Hinglish!)")
+        llm_client = GroqClient()
+    else:
+        print("   💻 Using Ollama (local LLM)")
+        llm_client = OllamaClient()
+
     verifier = AnswerVerifier(llm_client)
 
     # Step 2: Teachers banao — inhe retriever, llm, verifier do

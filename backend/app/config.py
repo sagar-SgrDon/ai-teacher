@@ -22,6 +22,12 @@ Isko kehte hain "Single Source of Truth" pattern.
 """
 
 import os
+from dotenv import load_dotenv
+
+# .env file se environment variables load karo
+# Yeh file project root mein hoti hai (ai-teacher/.env)
+# Secrets (API keys etc.) .env mein rakhte hain, code mein NAHI!
+load_dotenv()
 
 # ============================================================
 # PATHS
@@ -72,3 +78,26 @@ RAG_TOP_K = 3
 # ============================================================
 # Yeh define karta hai ki kaunse teachers available hain
 TEACHER_TYPES = ["english", "coding"]
+
+# ============================================================
+# LLM PROVIDER SETTINGS
+# ============================================================
+# LLM_PROVIDER decides kaunsa LLM use karna hai:
+#   "groq"   → Cloud API (fast, better Hinglish, needs internet)
+#   "ollama" → Local model (offline, but limited Hinglish)
+
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "groq")  # Default: groq
+
+# ============================================================
+# GROQ SETTINGS (Cloud LLM — Better Hinglish!)
+# ============================================================
+# Groq = Free cloud API for LLMs (Llama 70B, Gemma, etc.)
+# Signup: https://console.groq.com (30 req/min free!)
+#
+# LPU (Language Processing Unit) = Groq ka custom hardware
+# Isliye itna fast hai — 2-5 seconds mein response!
+
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")  # API key from .env file
+GROQ_MODEL = os.environ.get(
+    "GROQ_MODEL", "llama-3.3-70b-versatile"
+)  # Free, best for Hinglish
