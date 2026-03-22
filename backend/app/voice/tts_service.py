@@ -89,7 +89,7 @@ BACKUP_VOICES = [
 ]
 
 # Speech settings — teacher ke liye thoda slow aur clear
-SPEECH_RATE = "+5%"  # 5% fast — natural conversation speed
+SPEECH_RATE = "+20%"  # 10% fast — natural conversation speed
 SPEECH_PITCH = "+0Hz"  # Normal pitch — no change
 SPEECH_VOLUME = "+0%"  # Normal volume
 

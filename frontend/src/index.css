@@ -127,3 +127,32 @@
     @apply font-sans;
     }
 }
+
+/* ============================================================ */
+/* VOICE CHAT ANIMATIONS */
+/* ============================================================ */
+/*
+ * Yeh animations voice chat page mein use hoti hain.
+ *
+ * @keyframes kya hai?
+ * ───────────────────
+ * CSS mein animation define karne ka tarika.
+ * from/to ya percentage values se batao ki element
+ * kab kaisa dikhega.
+ *
+ * Socho jaise flipbook:
+ * 0% = pehla page (chhota, dikhta)
+ * 100% = aakhri page (bada, gayab)
+ * Browser BEECH ke frames khud generate karta hai!
+ */
+
+/* Floating animation — welcome screen emoji ke liye */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
